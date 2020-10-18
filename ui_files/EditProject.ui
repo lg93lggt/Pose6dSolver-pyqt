@@ -1,0 +1,771 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>Form</class>
+ <widget class="QWidget" name="Form">
+  <property name="enabled">
+   <bool>true</bool>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>688</width>
+    <height>461</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>编辑工程</string>
+  </property>
+  <layout class="QGridLayout" name="gridLayout">
+   <item row="0" column="0">
+    <layout class="QHBoxLayout" name="layout_dir_root">
+     <property name="sizeConstraint">
+      <enum>QLayout::SetMinimumSize</enum>
+     </property>
+     <property name="bottomMargin">
+      <number>1</number>
+     </property>
+     <item>
+      <widget class="QLabel" name="label_dir_root">
+       <property name="maximumSize">
+        <size>
+         <width>16777215</width>
+         <height>40</height>
+        </size>
+       </property>
+       <property name="text">
+        <string>根路径:</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QLineEdit" name="line_dir_root">
+       <property name="enabled">
+        <bool>false</bool>
+       </property>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="2" column="0">
+    <layout class="QHBoxLayout" name="layout_calib_solve">
+     <property name="topMargin">
+      <number>1</number>
+     </property>
+     <property name="bottomMargin">
+      <number>4</number>
+     </property>
+     <item>
+      <widget class="QGroupBox" name="groupbox_calib">
+       <property name="title">
+        <string>标定:</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout">
+        <item>
+         <layout class="QHBoxLayout" name="layout_btns_calib">
+          <item>
+           <widget class="QPushButton" name="pushbtn_add_images_calib">
+            <property name="text">
+             <string>添加图像</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_unit_length_calib">
+          <item>
+           <widget class="QLabel" name="label_unit_length_calib">
+            <property name="text">
+             <string>标定架长度(m):</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_unit_length_calib">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_unit_length_calib">
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_num_cameras_calib">
+          <item>
+           <widget class="QLabel" name="label_num_cameras_calib">
+            <property name="text">
+             <string>相机数量:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_num_cameras_calib">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_num_cameras_calib">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_num_scenes_calib">
+          <item>
+           <widget class="QLabel" name="label_num_scenes_calib">
+            <property name="text">
+             <string>图像数量(单相机):</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_num_scenes_calib">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_num_scenes_calib">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_dir_images_calib">
+          <item>
+           <widget class="QLabel" name="label_dir_images_calib">
+            <property name="text">
+             <string>图像路径:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_dir_images_calib">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_dir_images_calib">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_dir_points2d_calib">
+          <item>
+           <widget class="QLabel" name="label_dir_points2d_calib">
+            <property name="text">
+             <string>关键点(2d)路径:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_dir_points2d_calib">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_dir_points2d_calib">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_points3d_calib">
+          <item>
+           <widget class="QLabel" name="label_points3d_calib">
+            <property name="text">
+             <string>关键点(3d)路径:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_points3d_calib">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_dir_points3d_calib">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_dir_results_calib">
+          <item>
+           <widget class="QLabel" name="label_dir_results_calib">
+            <property name="text">
+             <string>标定输出路径:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_dir_results_calib">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_dir_results_calib">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_dir_visualize_calib">
+          <item>
+           <widget class="QLabel" name="label_dir_visualize_calib">
+            <property name="text">
+             <string>可视化输出路径:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_dir_visualize_calib">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_dir_visualize_calib">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+     <item>
+      <widget class="QGroupBox" name="groupbox_solve">
+       <property name="title">
+        <string>测量:</string>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <item>
+         <layout class="QHBoxLayout" name="layout_btns_solve">
+          <item>
+           <widget class="QPushButton" name="pushbtn_add_images_solve">
+            <property name="text">
+             <string>添加图像</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushbtn_add_points3d_solve">
+            <property name="text">
+             <string>添加关键点</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <widget class="QPushButton" name="pushbtn_add_models_solve">
+            <property name="text">
+             <string>添加模型</string>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_num_cameras_solve">
+          <item>
+           <widget class="QLabel" name="label_num_cameras_solve">
+            <property name="text">
+             <string>相机数量:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_num_cameras_solve">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_num_cameras_solve">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_num_scenes_solve">
+          <item>
+           <widget class="QLabel" name="label_num_scenes_solve">
+            <property name="text">
+             <string>图像数量(单相机):</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_num_scenes_solve">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_num_scenes_solve">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_num_points3d_solve">
+          <item>
+           <widget class="QLabel" name="label_num_points3d_solve">
+            <property name="text">
+             <string>关键点文件数量:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_num_points3d_solve">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_num_points3d_solve">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_num_models_solve">
+          <item>
+           <widget class="QLabel" name="label_num_models_solve">
+            <property name="text">
+             <string>模型数量:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_num_models_solve">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_num_models_solve">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_dir_images_solve">
+          <item>
+           <widget class="QLabel" name="label_dir_images_solve">
+            <property name="text">
+             <string>图像路径:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spcaer_dir_images_solve">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_dir_images_solve">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_dir_points2d_solve">
+          <item>
+           <widget class="QLabel" name="label_dir_points2d_solve">
+            <property name="text">
+             <string>关键点(2d)路径:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_dir_points2d_solve">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_dir_points2d_solve">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_dir_points3d_solve">
+          <item>
+           <widget class="QLabel" name="label_dir_points3d_solve">
+            <property name="text">
+             <string>关键点(3d)路径:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_dir_points3d_solve">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_dir_points3d_solve">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_dir_models_solve">
+          <item>
+           <widget class="QLabel" name="label_dir_models_solve">
+            <property name="text">
+             <string>模型路径:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_dir_models_solve">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_dir_models_solve">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_dir_result_solve">
+          <item>
+           <widget class="QLabel" name="label_dir_result_solve">
+            <property name="text">
+             <string>测量输出路径:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_results_solve">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_dir_results_solve">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_dir_visualize_solve">
+          <item>
+           <widget class="QLabel" name="label_dir_visualize_solve">
+            <property name="text">
+             <string>可视化输出路径:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_dir_visualize_solve">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_dir_visualize_solve">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+        <item>
+         <layout class="QHBoxLayout" name="layout_dir_logs_solve">
+          <item>
+           <widget class="QLabel" name="label_dir_logs_solve">
+            <property name="text">
+             <string>记录输出路径:</string>
+            </property>
+           </widget>
+          </item>
+          <item>
+           <spacer name="spacer_dir_logs_solve">
+            <property name="orientation">
+             <enum>Qt::Horizontal</enum>
+            </property>
+            <property name="sizeHint" stdset="0">
+             <size>
+              <width>40</width>
+              <height>20</height>
+             </size>
+            </property>
+           </spacer>
+          </item>
+          <item>
+           <widget class="QLineEdit" name="line_dir_logs_solve">
+            <property name="enabled">
+             <bool>false</bool>
+            </property>
+            <property name="text">
+             <string/>
+            </property>
+           </widget>
+          </item>
+         </layout>
+        </item>
+       </layout>
+      </widget>
+     </item>
+    </layout>
+   </item>
+   <item row="1" column="0">
+    <widget class="Line" name="line">
+     <property name="frameShadow">
+      <enum>QFrame::Plain</enum>
+     </property>
+     <property name="lineWidth">
+      <number>1</number>
+     </property>
+     <property name="orientation">
+      <enum>Qt::Horizontal</enum>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>

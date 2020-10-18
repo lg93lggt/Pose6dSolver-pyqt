@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="windowModality">
+   <enum>Qt::NonModal</enum>
+  </property>
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>704</width>
+    <height>532</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>Pose6dSolver</string>
+  </property>
+  <property name="autoFillBackground">
+   <bool>false</bool>
+  </property>
+  <property name="tabShape">
+   <enum>QTabWidget::Rounded</enum>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <layout class="QHBoxLayout" name="horizontalLayout1">
+    <item>
+     <layout class="QGridLayout" name="gridLayout"/>
+    </item>
+   </layout>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>704</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu1">
+    <property name="title">
+     <string>文件</string>
+    </property>
+    <addaction name="action1"/>
+    <addaction name="action1_2"/>
+    <addaction name="separator"/>
+    <addaction name="action1_3"/>
+   </widget>
+   <widget class="QMenu" name="menu2">
+    <property name="title">
+     <string>功能</string>
+    </property>
+    <addaction name="action2_1"/>
+    <addaction name="separator"/>
+    <addaction name="actionss1"/>
+   </widget>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>工具</string>
+    </property>
+    <addaction name="actionfenge"/>
+   </widget>
+   <addaction name="menu1"/>
+   <addaction name="menu2"/>
+   <addaction name="menu"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="action1">
+   <property name="text">
+    <string>新建工程</string>
+   </property>
+  </action>
+  <action name="action1_2">
+   <property name="text">
+    <string>打开工程</string>
+   </property>
+  </action>
+  <action name="action2_1">
+   <property name="text">
+    <string>标定</string>
+   </property>
+  </action>
+  <action name="action1_3">
+   <property name="text">
+    <string>加载模型</string>
+   </property>
+  </action>
+  <action name="actionss1">
+   <property name="text">
+    <string>测量</string>
+   </property>
+  </action>
+  <action name="actionfenge">
+   <property name="text">
+    <string>视频分割</string>
+   </property>
+  </action>
+ </widget>
+ <layoutdefault spacing="5" margin="8"/>
+ <resources/>
+ <connections/>
+ <designerdata>
+  <property name="gridDeltaX">
+   <number>10</number>
+  </property>
+  <property name="gridDeltaY">
+   <number>10</number>
+  </property>
+  <property name="gridSnapX">
+   <bool>true</bool>
+  </property>
+  <property name="gridSnapY">
+   <bool>true</bool>
+  </property>
+  <property name="gridVisible">
+   <bool>true</bool>
+  </property>
+ </designerdata>
+</ui>
