@@ -64,7 +64,7 @@ class ManualPoseWidget(QWidget, Ui_ManualPoseWidget.Ui_Form):
             tx = 0
 
         try:
-            ty = float(self.line_tx.text()) if (self.line_ty.text() != "") else 0.
+            ty = float(self.line_ty.text()) if (self.line_ty.text() != "") else 0.
         except :
             print("输入必须可转化为数字.")
             ty = 0

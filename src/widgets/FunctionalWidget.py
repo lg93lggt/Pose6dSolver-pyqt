@@ -32,8 +32,11 @@ class FunctionalWidget(QWidget, Ui_FunctionalWidget.Ui_Form):
         self.init_sub_tab_widgets(1)
 
         # 重定向print()
-        sys.stdout = EmittingStr(sig_print=self.slot_qtprint) 
-        sys.stderr = EmittingStr(sig_print=self.slot_qtprint)
+        if self.debug:
+            pass
+        else:  # release
+            sys.stdout = EmittingStr(sig_print=self.slot_qtprint) 
+            sys.stderr = EmittingStr(sig_print=self.slot_qtprint)
         loop = QEventLoop()
         QTimer.singleShot(1000, loop.quit)
         loop.exec_() 
@@ -49,8 +52,10 @@ class FunctionalWidget(QWidget, Ui_FunctionalWidget.Ui_Form):
         self.text_edit_outprint.ensureCursorVisible()   
 
     def init_sub_tab_widgets(self, n_obj=1):
-        self.tab_widget_objs.clear()
+        #self.tab_widget_objs.clear()
         for i_obj in range(n_obj):
+            if self.get_sub_tab_widget(i_obj) is not None:
+                continue
             name_obj = "obj_{}".format(i_obj + 1)
 
             sub_tab = QWidget()
@@ -63,6 +68,7 @@ class FunctionalWidget(QWidget, Ui_FunctionalWidget.Ui_Form):
             layout_tab = QVBoxLayout()
             sub_tab.setLayout(layout_tab)
             layout_tab.addWidget(sub_maul_widget)
+        #self.show()
         return
 
     def get_sub_tab_widget(self, obj: int or str) -> ManualPoseWidget.ManualPoseWidget:

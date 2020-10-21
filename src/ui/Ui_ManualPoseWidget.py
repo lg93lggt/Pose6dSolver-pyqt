@@ -73,8 +73,8 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
-        self.label_tvec.setText(_translate("Form", "平移向量(rad):"))
-        self.label_rvec.setText(_translate("Form", "旋转向量(m)  :"))
+        self.label_rvec.setText(_translate("Form", "旋转向量(degree):"))
+        self.label_tvec.setText(_translate("Form", "平移向量(m):"))
         self.label_y.setText(_translate("Form", "Y"))
         self.label_z.setText(_translate("Form", "Z"))
         self.label_x.setText(_translate("Form", "X"))

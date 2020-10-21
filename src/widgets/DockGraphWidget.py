@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import *
 
 sys.path.append("..")
 from ui import *
-from core import Visualizer, FileIO
+from core import Visualizer, FileIO, geometry
 from widgets import TableWidget
 
 
@@ -65,7 +65,13 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
         self.n_objs = n_objs
         return
 
-    def init_img(self, img_bgr: np.ndarray) -> None:
+    def init_img(self, img_input: np.ndarray) -> None:
+        if len(img_input.shape) == 2:
+            img_bgr = cv2.cvtColor(img_input, cv2.COLOR_GRAY2BGR)
+        elif len(img_input.shape) == 3:
+            img_bgr = img_input
+        else:
+            raise IndexError("图像读取失败.")
         self.img_raw  = img_bgr
         self.img_show = img_bgr.copy()
 
@@ -199,6 +205,7 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
             self.vis.draw_points2d(self.img_show, points2d, 1)
             sub_tabel_widget = self.get_sub_table_view(i_obj)
             points3d =  sub_tabel_widget.array
+            self.vis.draw_axis3d(self.img_show, self.camera_pars)
             self.vis.draw_points3d(self.img_show, points3d, theta, self.camera_pars)
             self.vis.draw_backbone3d(self.img_show, points3d, theta, self.camera_pars)
             self.vis.darw_texts(self.img_show, points3d, theta, self.camera_pars)
@@ -207,16 +214,21 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
         return
         
     def slot_draw_theta0(self, name_obj: str, i_cam: int, theta: np.ndarray):
+        theta = geometry.rtvec_degree2rad(theta)
+        print("draw :", theta)
         if self.objectName() == "cam_{:d}".format(i_cam + 1):
             self.img_show = self.img_raw.copy()
-            points2d = self.points2d_objs[name_obj]
-            self.vis.draw_points2d(self.img_show, points2d, 1)
+            
             sub_tabel_widget = self.get_sub_table_view(name_obj)
             points3d =  sub_tabel_widget.array
             self.vis.draw_points3d(self.img_show, points3d, theta, self.camera_pars)
             self.vis.draw_backbone3d(self.img_show, points3d, theta, self.camera_pars)
             self.vis.darw_texts(self.img_show, points3d, theta, self.camera_pars)
-            # self.vis.draw_model3d(self.img_show, model, theta, self.camera_pars)
+            self.vis.draw_axis3d(self.img_show, self.camera_pars)
+            if self.parent().parent().parent().parent():
+                main = self.parent().parent().parent().parent()
+                for i_model in range(main.fio.struct.solve.n_models):
+                    self.vis.draw_model3d(self.img_show, main.fio.load_model("solve", name_obj), theta, self.camera_pars)
             self._update_img()
         return
 

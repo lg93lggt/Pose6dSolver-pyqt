@@ -27,6 +27,16 @@ def t_to_T(tvec: np.ndarray)-> np.ndarray:
     T[:3, 3] = tvec
     return T
 
+def rtvec_degree2rad(rtvec_degree: np.ndarray) -> np.ndarray:
+    rtvec_rad = rtvec_degree.copy()
+    rtvec_rad[:3] = np.pi * (rtvec_rad[:3] / 180)
+    return rtvec_rad
+    
+def rtvec_rad2degree(rtvec_rad: np.ndarray) -> np.ndarray:
+    rtvec_degree = rtvec_rad.copy()
+    rtvec_degree[:3] = 180 * (rtvec_degree[:3] / np.pi)
+    return rtvec_degree
+
 def solve_projection_mat_3d_to_2d(points3d: np.ndarray, points2d: np.ndarray, method="svd")-> np.ndarray:
     n_points3d = points3d.shape[0]
     n_points2d = points2d.shape[0]
@@ -124,7 +134,7 @@ def get_reprojection_error(rtvec: np.ndarray, args):
     points2d_object = args[2]
     points2d_projected = project_points3d_to_2d(rtvec, M, points3d)
     delta = points2d_object - points2d_projected
-    loss = np.sqrt(np.diag(delta @ delta.T))
+    loss = np.sqrt(np.diag(delta @ delta.T)) # L2
     return loss
 
 def get_reprojection_error_multi(rtvec: np.ndarray, args):
@@ -142,7 +152,7 @@ def get_reprojection_error_multi(rtvec: np.ndarray, args):
     avg_loss = 0
     for i in range(n_cams):
         loss = get_reprojection_error(rtvec, [Ms[i], points3d, points2d_object_n_cams[i]])
-        #print("cam", i, ":\t", loss)
+        print("cam", i, ":\t", loss)
         avg_loss += np.average(loss)
         loss_multi_cams[i] = loss
     #print(np.average(loss_multi_cams))
@@ -150,11 +160,12 @@ def get_reprojection_error_multi(rtvec: np.ndarray, args):
 
 def get_jacobian_matrix(params, func_objective, args_of_func_objective):
     """
-    params, func_objective, args_of_func_objective
+    params, func_objective, args_of_func_objective:[mat_projection, points3d, points2d_object]
     """
-    delta = 1E-8
-    n_points = np.shape(args_of_func_objective[-1])[0]
-    J = np.zeros((n_points))
+    delta = 1E-6
+    n_prams = params.shape[0]
+    n_objects = np.shape(args_of_func_objective[-1])[0]
+    J = np.zeros(n_prams)
     for [idx_parm, param] in enumerate(params):
         params_delta_p = params.copy()
         params_delta_n = params.copy()
@@ -163,14 +174,13 @@ def get_jacobian_matrix(params, func_objective, args_of_func_objective):
 
         loss_delta_p = func_objective(params_delta_p, args_of_func_objective)
         loss_delta_n = func_objective(params_delta_n, args_of_func_objective)
-
         dl_of_dp = (loss_delta_p - loss_delta_n) / (2 * delta)
         J[idx_parm] = dl_of_dp
-    return J
+        return J
 
 def get_jacobian_matrix_multi(params, func_objective, args):
     """
-    params, func_objective, args_of_func_objective
+    params, func_objective,  args_of_func_objective:[mats_projection_of_n_cams, points3d_for_all_cams, points2d_object_n_cams]
     """
     delta = 1E-8
     n_prams = params.shape[0]
@@ -189,22 +199,3 @@ def get_jacobian_matrix_multi(params, func_objective, args):
         dl_of_dp = (loss_delta_p - loss_delta_n) / (2 * delta)
         J[idx_parm] = dl_of_dp
     return J
-
-def get_jacobian_matrix(params, func_objective, args_of_func_objective):
-    """
-    params, func_objective, args_of_func_objective
-    """
-    delta = 1E-6
-    n_objects = np.shape(args_of_func_objective[-1])[0]
-    J = np.zeros((n_objects))
-    for [idx_parm, param] in enumerate(params):
-        params_delta_p = params.copy()
-        params_delta_n = params.copy()
-        params_delta_p[idx_parm] = param + delta
-        params_delta_n[idx_parm] = param - delta
-
-        loss_delta_p = func_objective(params_delta_p, args_of_func_objective)
-        loss_delta_n = func_objective(params_delta_n, args_of_func_objective)
-        dl_of_dp = (loss_delta_p - loss_delta_n) / (2 * delta)
-        J[idx_parm] = dl_of_dp
-        return J

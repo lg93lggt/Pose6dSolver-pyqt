@@ -337,8 +337,6 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
                     return
                 else:
                     cameras_pars.append(camera_pars)
-            self.solver = SolverPoses6d.SolverPoses6d() 
-            self.solver.set_cameras_pars(cameras_pars)
 
             self.models = []
             for i_obj in range(n_objs):
@@ -361,11 +359,17 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
                     points3d_n_cams.append(points3d_npz["array"])
                     is_data_ready = True
                 if is_data_ready:
+                    self.solver = SolverPoses6d.SolverPoses6d(1000, 0.01, 0.9, 0.999) 
+                    self.solver.set_cameras_pars(cameras_pars)
                     self.solver.set_points2d_of_n_cams(points2d_n_cams)    
                     self.solver.set_points3d(points3d_n_cams[0])
-                    log   = self.solver.run(self.functional_area.get_theta0(self.fio.index2name("obj", i_obj)))
+                    theta0 = self.functional_area.get_theta0(self.fio.index2name("obj", i_obj))
+                    theta0 = geometry.rtvec_degree2rad(theta0)
+                    print("theta0:", theta0)
+                    log   = self.solver.run(theta0)
                     theta = self.solver.opt.theta
-
+                    
+                    theta = geometry.rtvec_rad2degree(theta)
 
                     self.fio.save_log(self.mode, self.i_scene, i_obj, log)
                     self.fio.save_theta(self.mode, self.i_scene, i_obj, theta)

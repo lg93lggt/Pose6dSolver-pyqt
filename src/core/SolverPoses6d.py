@@ -3,20 +3,22 @@ import argparse
 import json
 import math
 import os
+import sys
 
 import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 
-from . import FileIO
-from . import geometry as geo
-from .Adam import Adam
-from .Visualizer import Visualizer
+sys.path.append("..")
+from core import geometry as geo
+from core.Adam import Adam
+from core import Visualizer
+from core import FileIO
 
 
 class SolverPoses6d(object):
-    def __init__(self) -> None:
-        self.opt = Adam(n_iters=10000, alpha=1E-3, beta1=0.9, beta2=0.99)
+    def __init__(self, n_iters=10000, alpha=1E-3, beta1=0.9, beta2=0.999) -> None:
+        self.opt = Adam(n_iters, alpha, beta1, beta2)
         #self.opt2 = Adam(n_iters=50000, alpha=1E-6, beta1=0.9, beta2=0.999)
         return
 
@@ -27,8 +29,8 @@ class SolverPoses6d(object):
     def get_projection_mats_for_n_cams(self):
         self.mats_projections_for_n_cams = []
         for cam in self.cameras_pars:
-            mat_intrin = cam["intrin"]
-            mat_extrin = cam["extrin"]
+            mat_intrin = np.array(cam["intrin"])
+            mat_extrin = np.array(cam["extrin"])
             M = mat_intrin @ mat_extrin
             self.mats_projections_for_n_cams.append(M)
         return
@@ -59,98 +61,92 @@ class SolverPoses6d(object):
 
 
 
-def main(args, **k_args):
-    mode = "solve"
+if __name__ == "__main__":
+    from easydict import EasyDict
+    dir_cam = "C:/Users/Li/Desktop/Pose6dSolver-pyqt/simu/results_calib/"
+    dir_p3d = "C:/Users/Li/Desktop/Pose6dSolver-pyqt/simu/points3d_solve/"
+    p3ds = np.loadtxt(dir_p3d+"/obj_{}.txt".format(0+1))
+    cams = []
+    p2ds = []
+    for i in range(2):
 
-    vis = Visualizer()
+        cam = FileIO.load_camera_pars(dir_cam+"/cam_{}/camera_pars.json".format(i+1))
+        cams.append(cam)
+    p2ds.append(np.array([
+        [282,262],
+        [653,659],
+        [646,762], 
+        [597,719],
+        [709,696]
+    ]))
+    p2ds.append(np.array([
+        [277,346],
+        [956,692],
+        [935,791], 
+        [914,761],
+        [976,710]
+    ]))
 
-    fio = FileIO.FileIO()
-    fio = k_args["fio"]
+    x = np.zeros(6)
+    while True:
+        img1 = np.zeros((1280, 1280, 3))
+        img2 = np.zeros((1280, 1280, 3))
+        vis = Visualizer.Visualizer()
+        vis.draw_points2d(img1, p2ds[0])
+        vis.draw_axis3d(img1, cams[0])
+        vis.draw_backbone3d(img1, p3ds, x, cams[0])
 
-    pth_points3d = args.load_model_points3d[0]
-    points3d = fio.load_points3d(pth_points3d)
+        vis.draw_points2d(img2, p2ds[1])
+        vis.draw_axis3d(img2, cams[1])
+        vis.draw_backbone3d(img2, p3ds, x, cams[1])
+        cv2.imshow("1", img1)
+        cv2.imshow("2", img2)
+        key = cv2.waitKey(500)
+        if key == ord("q"):
+            x[0] += 0.01
+        if key == ord("w"):
+            x[0] -= 0.01
+        if key == ord("a"):
+            x[1] += 0.01
+        if key == ord("s"):
+            x[1] -= 0.01
+        if key == ord("z"):
+            x[2] += 0.01
+        if key == ord("x"):
+            x[2] -= 0.01
+
+        if key == ord("r"):
+            x[3] += 0.01
+        if key == ord("t"):
+            x[3] -= 0.01
+        if key == ord("f"):
+            x[4] += 0.01
+        if key == ord("g"):
+            x[4] -= 0.01
+        if key == ord("v"):
+            x[5] += 0.01
+        if key == ord("b"):
+            x[5] -= 0.01
+        if key == ord("p"):
+            break
+
+
+    solver = SolverPoses6d(1000, 0.1, 0.9, 0.99)
+    solver.set_cameras_pars(cams)
+    solver.set_points2d_of_n_cams(p2ds)
+    solver.set_points3d(p3ds)
+    solver.run(x)
+    vis = Visualizer.Visualizer()
+    vis.draw_points2d(img1, p2ds[0])
+    vis.draw_axis3d(img1, cams[0])
+    vis.draw_backbone3d(img1, p3ds, solver.opt.theta, cams[0])
+    vis.draw_points2d(img2, p2ds[0])
+    vis.draw_axis3d(img2, cams[0])
+    vis.draw_backbone3d(img2, p3ds, solver.opt.theta, cams[0])
+    cv2.imshow("1", img1)
+    cv2.imshow("2", img2)
+    cv2.waitKey()
     
-
-    n_cams   = fio.file_structure[mode]["n_cams"]
-    n_senses = fio.file_structure[mode]["n_senses"]
-    dir_points2d  = fio.file_structure[mode]["dirs"]["points2d"]
-    dir_cameras   = fio.file_structure["calib"]["dirs"]["results"]
-    dir_images    = fio.file_structure[mode]["dirs"]["images"]
-    dir_logs      = fio.file_structure[mode]["dirs"]["logs"]
-    dir_results   = fio.file_structure[mode]["dirs"]["results"]
-    dir_visualize = fio.file_structure[mode]["dirs"]["visualize"]
-    names_subdir = fio.file_structure[mode]["names_subdir"]
-    suffix_image = fio.file_structure[mode]["suffix_image"]
-    cameras_pars = []
-    for i_cam in range(n_cams):
-        name_subdir = names_subdir[i_cam]
-        pth_cameras = os.path.join(dir_cameras, name_subdir, "camera_pars.json")
-        camera_pars = fio.load_camera_pars(pth_cameras)
-        cameras_pars.append(camera_pars)
-
-    for i_sense in range(n_senses):
-        print("sense:\t{:d} / {:d}".format(i_sense + 1, n_senses))
-        pair = fio.file_structure[mode]["pairs"][i_sense]
-        points2d_of_n_cams = []
-        for i_cam in range(n_cams):
-            name_subdir = names_subdir[i_cam]
-            prefix_points2d = pair[i_cam]
-            pth_points2d = os.path.join(dir_points2d, name_subdir, prefix_points2d + ".txt")
-            points2d = fio.load_points2d(pth_points2d)
-            points2d_of_n_cams.append(points2d)
-
-        solver = SolverPoses6d()
-        solver.set_cameras_pars(cameras_pars)
-        solver.set_points2d_of_n_cams(points2d_of_n_cams)    
-        solver.set_points3d(points3d)   
-        res = solver.run()
-        
-        n_iters = res.shape[0]
-        x = np.arange(n_iters)
-        plt.plot(x, res[:, 0])
-        plt.draw()
-        
-        fio.save_log(dir_logs=dir_logs, prefix=str(i_sense), log=res)
-        fio.save_theta(dir_logs=dir_results, prefix=str(i_sense), log=solver.opt.theta)
-        degree = solver.opt.theta[:3] / np.pi * 180
-        print("theta=", solver.opt.theta)
-        print("degree=", degree)
-        print()
-
-        for i_cam in range(n_cams):
-            pth_image = os.path.join(dir_images, names_subdir[i_cam], pair[i_cam] + suffix_image)
-            subdir_visualize = os.path.join(dir_visualize, names_subdir[i_cam])
-
-            img = cv2.imread(pth_image)
-            vis.draw(
-                mode=mode,
-                img=img, 
-                points2d=points2d_of_n_cams[i_cam], 
-                points3d=points3d, 
-                rtvec=solver.opt.theta, 
-                camera_pars=cameras_pars[i_cam]
-            )
-            cv2.imshow("cam_" + str(i_cam + 1), img)
-            cv2.waitKey(100)
-            fio.save_image(
-                dir_image=subdir_visualize, 
-                prefix=pair[i_cam], 
-                img=img
-            ) 
-            if args.load_model3d:
-                pth_model = args.load_model3d[0]
-                model = fio.load_model_from_stl_binary(pth_model)
-                vis.draw_model3d(img, solver.opt.theta, cameras_pars[i_cam], model)
-                cv2.imshow(str(i_cam), img)
-                cv2.waitKey(100)
-            fio.save_image(
-                dir_image=subdir_visualize, 
-                prefix=pair[i_cam] + "_with_model", 
-                img=img
-            ) 
-            
-    return
-
-
+    print()
 
 

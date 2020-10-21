@@ -63,6 +63,16 @@ def get_sub_dirs_names(dir_motherfolder: str):
     names_dir_sub.sort()
     return names_dir_sub
 
+def load_camera_pars(pth):
+    with open(pth) as fp:
+        data = EasyDict(json.load(fp))
+        camera_pars= EasyDict({})
+        camera_pars.intrin = np.array(data.intrin)
+        camera_pars.extrin = np.array(data.extrin)
+        camera_pars.rvec = np.array(data.rvec)
+        camera_pars.tvec = np.array(data.tvec)
+    return camera_pars
+
 def load_model_from_obj(pth_obj: str, is_swap_yz=False):
     """
         加载obj文件
@@ -402,7 +412,8 @@ class FileIO(object):
             return 
         else:
             print("加载:", pth)
-            return np.loadtxt(pth, dtype=int)
+            poins2d = np.loadtxt(pth, dtype=int)
+            return poins2d.astype(np.int)
 
     def load_points3d(self, mode: str, obj: str or int):
         if isinstance(obj, str): 
@@ -435,7 +446,8 @@ class FileIO(object):
             return 
         else:
             print("加载:", pth)
-            return np.load(pth)
+            points3dz = np.load(pth)
+            return points3dz
 
     def save_points2d(self, mode: str, scene: str or int, obj: str or int, cam: str or int, array: np.ndarray) -> None:
         if isinstance(scene, str):

@@ -13,7 +13,7 @@ class Ui_Dialog(object):
         self.verticalLayout.addWidget(self.toolButton)
         self.plainTextEdit = QtWidgets.QPlainTextEdit(Dialog)
         self.plainTextEdit.setObjectName("plainTextEdit")
-        self.plainTextEdit.setPlainText("../姿态测量")
+        self.plainTextEdit.setPlainText("./姿态测量")
         self.verticalLayout.addWidget(self.plainTextEdit)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
