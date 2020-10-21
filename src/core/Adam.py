@@ -30,7 +30,7 @@ class Adam(object):
 
     def run(self, x0, *args_of_func_objective):
         """
-        x0, args_of_func_objective
+            x0, args_of_func_objective
         """
         self.theta = x0
         loss = self.func_objective(self.theta, args_of_func_objective)

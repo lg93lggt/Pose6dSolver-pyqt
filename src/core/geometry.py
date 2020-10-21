@@ -125,7 +125,7 @@ def project_points3d_to_2d(rtvec: np.ndarray, mat_projection: np.ndarray, points
     points2d = points2d.T
     return points2d
 
-def get_reprojection_error(rtvec: np.ndarray, args):
+def get_residual(rtvec: np.ndarray, args):
     """
     rtvec, [mat_projection, points3d, points2d_object]
     """
@@ -133,7 +133,33 @@ def get_reprojection_error(rtvec: np.ndarray, args):
     points3d = args[1]
     points2d_object = args[2]
     points2d_projected = project_points3d_to_2d(rtvec, M, points3d)
-    delta = points2d_object - points2d_projected
+    residual = points2d_object - points2d_projected
+    return residual
+
+# def get_residual_multi(rtvec: np.ndarray, args):
+#     """
+#     rtvec, [mats_projection_of_n_cams, points3d_for_all_cams, points2d_object_n_cams]
+#     """
+#     Ms = args[0]
+#     points3d = args[1]
+#     points2d_object_n_cams = args[2]
+
+#     n_cams = len(points2d_object_n_cams)
+#     n_points = points3d.shape[0]
+
+#     residual_multi = np.zeros((2, n_points))
+#     avg_loss = 0
+#     for i in range(n_cams):
+#         residual = get_residual(rtvec, [Ms[i], points3d, points2d_object_n_cams[i]])
+#         avg_loss += np.average(loss)
+#         loss_multi_cams[i] = loss
+#     return residual
+
+def get_reprojection_error(rtvec: np.ndarray, args):
+    """
+    rtvec, [mat_projection, points3d, points2d_object]
+    """
+    delta = get_residual(rtvec, args)
     loss = np.sqrt(np.diag(delta @ delta.T)) # L2
     return loss
 

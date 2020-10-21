@@ -12,15 +12,31 @@ from matplotlib import pyplot as plt
 sys.path.append("..")
 from core import geometry as geo
 from core.Adam import Adam
+from core.LevenbergMarquardt import LevenbergMarquardt 
 from core import Visualizer
 from core import FileIO
 
 
 class SolverPoses6d(object):
-    def __init__(self, n_iters=10000, alpha=1E-3, beta1=0.9, beta2=0.999) -> None:
-        self.opt = Adam(n_iters, alpha, beta1, beta2)
-        #self.opt2 = Adam(n_iters=50000, alpha=1E-6, beta1=0.9, beta2=0.999)
+    def __init__(self, name_opt_method, **kwargs) -> None:
+        avaliable_methods = {"Adam": Adam, "LM": LevenbergMarquardt}
+        n_iters = kwargs["n_iters"] if ("n_iters" in kwargs.keys()) else 10000
+        alpha = kwargs["alpha"] if ("alpha" in kwargs.keys()) else 1E-3
+        beta1 = kwargs["beta1"] if ("beta1" in kwargs.keys()) else 0.9
+        beta2 = kwargs["beta2"] if ("beta2" in kwargs.keys()) else 0.99
+        if name_opt_method == "Adam":
+            self.opt = avaliable_methods[name_opt_method](n_iters, alpha, beta1, beta2)
+        if name_opt_method == "LM":
+            # alpha = kwargs["alpha"] if ("alpha" in kwargs.keys()) else 1E-3
+            # beta1 = kwargs["beta1"] if ("beta1" in kwargs.keys()) else 0.9
+            # beta2 = kwargs["beta2"] if ("beta2" in kwargs.keys()) else 0.99
+            self.opt = avaliable_methods[name_opt_method](n_iters, alpha)
+            alpha = kwargs["alpha"] if ("alpha" in kwargs.keys()) else 1E-3
+
         return
+
+    # def set_opt_hyper_params(self, **kwargs):
+
 
     def set_points3d(self, points3d: np.ndarray):
         self.points3d = points3d
@@ -49,8 +65,9 @@ class SolverPoses6d(object):
     def run(self, theta0=np.zeros(6)):
         self.opt.set_objective_func(geo.get_reprojection_error_multi)
         self.opt.set_jacobian_func(geo.get_jacobian_matrix_multi)
+        #self.opt.set_residual_func(geo.get_residual)
         n_points = self.points2d_of_n_cams[0].shape[0]
-        [log_loss, log_theta] = self.opt.run(theta0, self.mats_projections_for_n_cams, self.points3d[:n_points], self.points2d_of_n_cams)
+        [log_loss, log_theta] = self.opt.run(theta0, self.mats_projections_for_n_cams, self.points3d, self.points2d_of_n_cams)
         log = np.hstack((np.array(log_theta), np.array(log_loss).reshape((-1, 1))))
         return log
 
@@ -63,8 +80,8 @@ class SolverPoses6d(object):
 
 if __name__ == "__main__":
     from easydict import EasyDict
-    dir_cam = "C:/Users/Li/Desktop/Pose6dSolver-pyqt/simu/results_calib/"
-    dir_p3d = "C:/Users/Li/Desktop/Pose6dSolver-pyqt/simu/points3d_solve/"
+    dir_cam = "../../simu/results_calib/"
+    dir_p3d = "../../simu/points3d_solve/"
     p3ds = np.loadtxt(dir_p3d+"/obj_{}.txt".format(0+1))
     cams = []
     p2ds = []
@@ -131,7 +148,7 @@ if __name__ == "__main__":
             break
 
 
-    solver = SolverPoses6d(1000, 0.1, 0.9, 0.99)
+    solver = SolverPoses6d("LM", n_iters=10000, alpha=1E-4)
     solver.set_cameras_pars(cams)
     solver.set_points2d_of_n_cams(p2ds)
     solver.set_points3d(p3ds)
