@@ -116,6 +116,8 @@ if __name__ == "__main__":
         vis.draw_points2d(img2, p2ds[1])
         vis.draw_axis3d(img2, cams[1])
         vis.draw_backbone3d(img2, p3ds, x, cams[1])
+        cv2.namedWindow("1", cv2.WINDOW_FREERATIO)
+        cv2.namedWindow("2", cv2.WINDOW_FREERATIO)
         cv2.imshow("1", img1)
         cv2.imshow("2", img2)
         key = cv2.waitKey(500)
@@ -148,7 +150,7 @@ if __name__ == "__main__":
             break
 
 
-    solver = SolverPoses6d("LM", n_iters=10000, alpha=1E-4)
+    solver = SolverPoses6d("LM", n_iters=1000, alpha=1E-2)
     solver.set_cameras_pars(cams)
     solver.set_points2d_of_n_cams(p2ds)
     solver.set_points3d(p3ds)
@@ -157,12 +159,14 @@ if __name__ == "__main__":
     vis.draw_points2d(img1, p2ds[0])
     vis.draw_axis3d(img1, cams[0])
     vis.draw_backbone3d(img1, p3ds, solver.opt.theta, cams[0])
-    vis.draw_points2d(img2, p2ds[0])
-    vis.draw_axis3d(img2, cams[0])
-    vis.draw_backbone3d(img2, p3ds, solver.opt.theta, cams[0])
-    cv2.imshow("1", img1)
-    cv2.imshow("2", img2)
-    cv2.waitKey()
+
+    vis.draw_points2d(img2, p2ds[1])
+    vis.draw_axis3d(img2, cams[1])
+    vis.draw_backbone3d(img2, p3ds, solver.opt.theta, cams[1])
+    while 1:
+        cv2.imshow("1", img1)
+        cv2.imshow("2", img2)
+        cv2.waitKey(100)
     
     print()
 

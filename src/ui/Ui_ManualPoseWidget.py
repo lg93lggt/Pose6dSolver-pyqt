@@ -1,9 +1,8 @@
-
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'c:\Users\Li\Desktop\Pose6dSolver-pyqt\ui_files\ManualPoseWidget.ui'
+# Form implementation generated from reading ui file '/home/veily/LiGan/Pose6dSolver-pyqt/ui_files/ManualPoseWidget.ui'
 #
-# Created by: PyQt5 UI code generator 5.9.2
+# Created by: PyQt5 UI code generator 5.15.1
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -17,30 +16,6 @@ class Ui_Form(object):
         self.verticalLayout.setObjectName("verticalLayout")
         self.layout_retvec = QtWidgets.QGridLayout()
         self.layout_retvec.setObjectName("layout_retvec")
-        self.line_rz = QtWidgets.QLineEdit(Form)
-        self.line_rz.setMaximumSize(QtCore.QSize(16777215, 20))
-        self.line_rz.setObjectName("line_rz")
-        self.layout_retvec.addWidget(self.line_rz, 1, 4, 1, 1)
-        self.line_ry = QtWidgets.QLineEdit(Form)
-        self.line_ry.setMaximumSize(QtCore.QSize(16777215, 20))
-        self.line_ry.setObjectName("line_ry")
-        self.layout_retvec.addWidget(self.line_ry, 1, 3, 1, 1)
-        self.line_rx = QtWidgets.QLineEdit(Form)
-        self.line_rx.setMaximumSize(QtCore.QSize(16777215, 20))
-        self.line_rx.setObjectName("line_rx")
-        self.layout_retvec.addWidget(self.line_rx, 1, 2, 1, 1)
-        self.line_tz = QtWidgets.QLineEdit(Form)
-        self.line_tz.setMaximumSize(QtCore.QSize(16777215, 20))
-        self.line_tz.setObjectName("line_tz")
-        self.layout_retvec.addWidget(self.line_tz, 2, 4, 1, 1)
-        self.line_tx = QtWidgets.QLineEdit(Form)
-        self.line_tx.setMaximumSize(QtCore.QSize(16777215, 20))
-        self.line_tx.setObjectName("line_tx")
-        self.layout_retvec.addWidget(self.line_tx, 2, 2, 1, 1)
-        self.line_ty = QtWidgets.QLineEdit(Form)
-        self.line_ty.setMaximumSize(QtCore.QSize(16777215, 20))
-        self.line_ty.setObjectName("line_ty")
-        self.layout_retvec.addWidget(self.line_ty, 2, 3, 1, 1)
         self.label_tvec = QtWidgets.QLabel(Form)
         self.label_tvec.setMaximumSize(QtCore.QSize(16777215, 20))
         self.label_tvec.setObjectName("label_tvec")
@@ -65,6 +40,47 @@ class Ui_Form(object):
         self.label_x.setAlignment(QtCore.Qt.AlignCenter)
         self.label_x.setObjectName("label_x")
         self.layout_retvec.addWidget(self.label_x, 0, 2, 1, 1)
+        self.double_spin_box_rx = QtWidgets.QDoubleSpinBox(Form)
+        self.double_spin_box_rx.setDecimals(3)
+        self.double_spin_box_rx.setMinimum(-179.99)
+        self.double_spin_box_rx.setMaximum(180.0)
+        self.double_spin_box_rx.setSingleStep(0.1)
+        self.double_spin_box_rx.setProperty("value", 0.0)
+        self.double_spin_box_rx.setObjectName("double_spin_box_rx")
+        self.layout_retvec.addWidget(self.double_spin_box_rx, 1, 2, 1, 1)
+        self.double_spin_box_ry = QtWidgets.QDoubleSpinBox(Form)
+        self.double_spin_box_ry.setWrapping(False)
+        self.double_spin_box_ry.setDecimals(3)
+        self.double_spin_box_ry.setMinimum(-179.99)
+        self.double_spin_box_ry.setMaximum(180.0)
+        self.double_spin_box_ry.setSingleStep(0.1)
+        self.double_spin_box_ry.setObjectName("double_spin_box_ry")
+        self.layout_retvec.addWidget(self.double_spin_box_ry, 1, 3, 1, 1)
+        self.double_spin_box_rz = QtWidgets.QDoubleSpinBox(Form)
+        self.double_spin_box_rz.setDecimals(3)
+        self.double_spin_box_rz.setMinimum(-179.99)
+        self.double_spin_box_rz.setMaximum(180.0)
+        self.double_spin_box_rz.setSingleStep(0.1)
+        self.double_spin_box_rz.setObjectName("double_spin_box_rz")
+        self.layout_retvec.addWidget(self.double_spin_box_rz, 1, 4, 1, 1)
+        self.double_spin_box_tx = QtWidgets.QDoubleSpinBox(Form)
+        self.double_spin_box_tx.setDecimals(3)
+        self.double_spin_box_tx.setMinimum(-99.99)
+        self.double_spin_box_tx.setSingleStep(0.01)
+        self.double_spin_box_tx.setObjectName("double_spin_box_tx")
+        self.layout_retvec.addWidget(self.double_spin_box_tx, 2, 2, 1, 1)
+        self.double_spin_box_ty = QtWidgets.QDoubleSpinBox(Form)
+        self.double_spin_box_ty.setDecimals(3)
+        self.double_spin_box_ty.setMinimum(-99.99)
+        self.double_spin_box_ty.setSingleStep(0.01)
+        self.double_spin_box_ty.setObjectName("double_spin_box_ty")
+        self.layout_retvec.addWidget(self.double_spin_box_ty, 2, 3, 1, 1)
+        self.double_spin_box_tz = QtWidgets.QDoubleSpinBox(Form)
+        self.double_spin_box_tz.setDecimals(3)
+        self.double_spin_box_tz.setMinimum(-99.99)
+        self.double_spin_box_tz.setSingleStep(0.01)
+        self.double_spin_box_tz.setObjectName("double_spin_box_tz")
+        self.layout_retvec.addWidget(self.double_spin_box_tz, 2, 4, 1, 1)
         self.verticalLayout.addLayout(self.layout_retvec)
 
         self.retranslateUi(Form)
@@ -73,10 +89,9 @@ class Ui_Form(object):
     def retranslateUi(self, Form):
         _translate = QtCore.QCoreApplication.translate
         Form.setWindowTitle(_translate("Form", "Form"))
-        self.label_rvec.setText(_translate("Form", "旋转向量(degree):"))
         self.label_tvec.setText(_translate("Form", "平移向量(m):"))
+        self.label_rvec.setText(_translate("Form", "旋转向量(degree)  :"))
         self.label_y.setText(_translate("Form", "Y"))
         self.label_z.setText(_translate("Form", "Z"))
         self.label_x.setText(_translate("Form", "X"))
-
 

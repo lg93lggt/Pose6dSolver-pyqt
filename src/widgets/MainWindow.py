@@ -359,7 +359,8 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
                     points3d_n_cams.append(points3d_npz["array"])
                     is_data_ready = True
                 if is_data_ready:
-                    self.solver = SolverPoses6d.SolverPoses6d(1000, 0.01, 0.9, 0.999) 
+                    #self.solver = SolverPoses6d.SolverPoses6d("LM", n_iters=1000, alpha=0.01) 
+                    self.solver = SolverPoses6d.SolverPoses6d("Adam", n_iters=10000, alpha=0.001, beta1=0.9, beta2=0.99) 
                     self.solver.set_cameras_pars(cameras_pars)
                     self.solver.set_points2d_of_n_cams(points2d_n_cams)    
                     self.solver.set_points3d(points3d_n_cams[0])

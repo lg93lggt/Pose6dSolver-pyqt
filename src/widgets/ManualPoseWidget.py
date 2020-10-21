@@ -21,18 +21,19 @@ class ManualPoseWidget(QWidget, Ui_ManualPoseWidget.Ui_Form):
         self.debug = parent.debug if parent else True
 
         # 命名子控件
-        self.line_rx.setObjectName("lineRx")
-        self.line_ry.setObjectName("lineRy")
-        self.line_rz.setObjectName("lineRz")
-        self.line_tx.setObjectName("lineTx")
-        self.line_ty.setObjectName("lineTy")
-        self.line_tz.setObjectName("lineTz")
-        self.line_rx.setText("0")
-        self.line_ry.setText("0")
-        self.line_rz.setText("0")
-        self.line_tx.setText("0")
-        self.line_ty.setText("0")
-        self.line_tz.setText("0")
+        self.double_spin_box_rx.setObjectName("lineRx")
+        self.double_spin_box_ry.setObjectName("lineRy")
+        self.double_spin_box_rz.setObjectName("lineRz")
+        self.double_spin_box_tx.setObjectName("lineTx")
+        self.double_spin_box_ty.setObjectName("lineTy")
+        self.double_spin_box_tz.setObjectName("lineTz")
+
+        self.double_spin_box_rx.setValue(0.)
+        self.double_spin_box_ry.setValue(0.)
+        self.double_spin_box_rz.setValue(0.)
+        self.double_spin_box_tx.setValue(0.)
+        self.double_spin_box_ty.setValue(0.)
+        self.double_spin_box_tz.setValue(0.)
 
         # 激活pyqtSlot装饰器
         QtCore.QMetaObject.connectSlotsByName(self)
@@ -40,37 +41,37 @@ class ManualPoseWidget(QWidget, Ui_ManualPoseWidget.Ui_Form):
 
     def get_rtvec(self):
         try:
-            rx = float(self.line_rx.text()) if (self.line_rx.text() != "") else 0.
+            rx = float(self.double_spin_box_rx.value()) if (self.double_spin_box_rx.value() != "") else 0.
         except :
             print("输入必须可转化为数字.")
             rx = 0
 
         try:
-            ry = float(self.line_ry.text()) if (self.line_ry.text() != "") else 0.
+            ry = float(self.double_spin_box_ry.value()) if (self.double_spin_box_ry.value() != "") else 0.
         except :
             print("输入必须可转化为数字.")
             ry = 0
 
         try:
-            rz = float(self.line_rz.text()) if (self.line_rz.text() != "") else 0.
+            rz = float(self.double_spin_box_rz.value()) if (self.double_spin_box_rz.value() != "") else 0.
         except :
             print("输入必须可转化为数字.")
             rz = 0
 
         try:
-            tx = float(self.line_tx.text()) if (self.line_tx.text() != "") else 0.
+            tx = float(self.double_spin_box_tx.value()) if (self.double_spin_box_tx.value() != "") else 0.
         except :
             print("输入必须可转化为数字.")
             tx = 0
 
         try:
-            ty = float(self.line_ty.text()) if (self.line_ty.text() != "") else 0.
+            ty = float(self.double_spin_box_ty.value()) if (self.double_spin_box_ty.value() != "") else 0.
         except :
             print("输入必须可转化为数字.")
             ty = 0
 
         try:
-            tz = float(self.line_tz.text()) if (self.line_tz.text() != "") else 0.
+            tz = float(self.double_spin_box_tz.value()) if (self.double_spin_box_tz.value() != "") else 0.
         except :
             print("输入必须可转化为数字.")
             tz = 0
@@ -79,12 +80,12 @@ class ManualPoseWidget(QWidget, Ui_ManualPoseWidget.Ui_Form):
 
     def set_rtvec(self, rtvec: np.ndarray):
         try:
-            self.line_rx.setText(str(rtvec[0]))
-            self.line_ry.setText(str(rtvec[1]))
-            self.line_rz.setText(str(rtvec[2]))
-            self.line_tx.setText(str(rtvec[3]))
-            self.line_ty.setText(str(rtvec[4]))
-            self.line_tz.setText(str(rtvec[5]))
+            self.double_spin_box_rx.setText(str(rtvec[0]))
+            self.double_spin_box_ry.setText(str(rtvec[1]))
+            self.double_spin_box_rz.setText(str(rtvec[2]))
+            self.double_spin_box_tx.setText(str(rtvec[3]))
+            self.double_spin_box_ty.setText(str(rtvec[4]))
+            self.double_spin_box_tz.setText(str(rtvec[5]))
         except :
             print("rtvec 不正确")
 

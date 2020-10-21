@@ -21,6 +21,6 @@ if __name__ == "__main__":
     import sys
 
     app = QtWidgets.QApplication(sys.argv)    
-    main_window = MainWindow.MainWindow(debug=False)
+    main_window = MainWindow.MainWindow(debug=True)
     main_window.show()
     sys.exit(app.exec_())

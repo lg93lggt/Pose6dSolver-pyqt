@@ -412,7 +412,7 @@ class FileIO(object):
             return 
         else:
             print("加载:", pth)
-            poins2d = np.loadtxt(pth, dtype=int)
+            poins2d = np.loadtxt(pth)
             return poins2d.astype(np.int)
 
     def load_points3d(self, mode: str, obj: str or int):
