@@ -206,9 +206,8 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
             sub_tabel_widget = self.get_sub_table_view(i_obj)
             points3d =  sub_tabel_widget.array
             self.vis.draw_axis3d(self.img_show, self.camera_pars)
-            self.vis.draw_points3d(self.img_show, points3d, theta, self.camera_pars)
             self.vis.draw_backbone3d(self.img_show, points3d, theta, self.camera_pars)
-            self.vis.darw_texts(self.img_show, points3d, theta, self.camera_pars)
+            self.vis.draw_points3d_with_texts(self.img_show, points3d, theta, self.camera_pars)
             # self.vis.draw_model3d(self.img_show, model, theta, self.camera_pars)
             self._update_img()
         return
@@ -221,14 +220,14 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
             
             sub_tabel_widget = self.get_sub_table_view(name_obj)
             points3d =  sub_tabel_widget.array
-            self.vis.draw_points3d(self.img_show, points3d, theta, self.camera_pars)
+            self.vis.draw_points3d_with_texts(self.img_show, points3d, theta, self.camera_pars)
             self.vis.draw_backbone3d(self.img_show, points3d, theta, self.camera_pars)
-            self.vis.darw_texts(self.img_show, points3d, theta, self.camera_pars)
             self.vis.draw_axis3d(self.img_show, self.camera_pars)
-            if self.parent().parent().parent().parent():
-                main = self.parent().parent().parent().parent()
-                for i_model in range(main.fio.struct.solve.n_models):
-                    self.vis.draw_model3d(self.img_show, main.fio.load_model("solve", name_obj), theta, self.camera_pars)
+            # 先不画模型
+            # if self.parent().parent().parent().parent():
+            #     main = self.parent().parent().parent().parent()
+            #     for i_model in range(main.fio.struct.solve.n_models):
+            #         self.vis.draw_model3d(self.img_show, main.fio.load_model("solve", name_obj), theta, self.camera_pars)
             self._update_img()
         return
 

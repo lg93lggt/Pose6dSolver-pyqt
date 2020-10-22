@@ -57,28 +57,51 @@ class Visualizer(object):
             self.draw_axis3d(img, camera_pars)
         return
     
-    def draw_points2d(self, img, points2d_chosen, radius=1, color: Tuple[int]=(0, 127, 255)):
+    def draw_points2d(self, img, points2d_chosen, radius=5, color: Tuple[int]=(0, 127, 0)):
         for point2d in points2d_chosen:
             cv2.circle(img, to_plot(point2d), radius, color, 1, 0)
+        return
+
+    def draw_points2d_with_texts(self, img, points2d_chosen, radius=5, color: Tuple[int]=(0, 127, 255)):
+        for [i_point, point2d] in enumerate(points2d_chosen):
+            cv2.circle(img, to_plot(point2d), radius, color, 1, 0)
+            off_set = 5
+            text = "{}".format(i_point + 1)
+            cv2.putText(img, text, to_plot(point2d + off_set), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color=(0,0,255))
         return
     
     def draw_points3d(self, 
             img: np.ndarray, 
             points3d: np.ndarray, 
             rtvec: np.ndarray, camera_pars: Dict, 
-            color: Tuple[int]=(0, 0, 255)
+            radius=1,
+            color: Tuple[int]=(255, 127, 0)
         ):
 
         M = camera_pars["intrin"] @ camera_pars["extrin"]
         points2d = geo.project_points3d_to_2d(rtvec, M, points3d)
-        self.draw_points2d(img, points2d, color=color)
+        self.draw_points2d(img, points2d, radius=radius, color=color)
+        return
+        
+    def draw_points3d_with_texts(self, img, points3d, rtvec, camera_pars, radius=1, color: Tuple[int]=(255, 127, 0)):
+        self.draw_points3d(img, points3d, rtvec, camera_pars)
+        M = camera_pars["intrin"] @ camera_pars["extrin"]
+        points2d = geo.project_points3d_to_2d(rtvec, M, points3d)
+        self.draw_points2d(img, points2d, radius=radius, color=color)
+        n_points = points2d.shape[0]
+        for i_point in range(n_points):
+            point2d = points2d[i_point]
+            off_set = 5
+            text = "{}".format(i_point + 1)
+            cv2.putText(img, text, to_plot(point2d + off_set), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color=(0,0,255))
         return
 
     def draw_backbone3d(self, 
             img: np.ndarray, 
             points3d_backbone: np.ndarray, 
             rtvec: np.ndarray, camera_pars, 
-            color: Tuple[int]=(255, 255, 128), width_line = 1
+            color: Tuple[int]=(255, 255, 128), 
+            width_line = 1
         ):
 
         M = camera_pars["intrin"] @ camera_pars["extrin"]
@@ -214,18 +237,6 @@ class Visualizer(object):
             # cv2.waitKey(0)   
         return
     
-    def darw_texts(self, img, points3d, rtvec, camera_pars):
-        self.draw_points3d(img, points3d, rtvec, camera_pars)
-        M = camera_pars["intrin"] @ camera_pars["extrin"]
-        points2d = geo.project_points3d_to_2d(rtvec, M, points3d)
-        self.draw_points2d(img, points2d)
-        n_points = points2d.shape[0]
-        for i_point in range(n_points):
-            point2d = points2d[i_point]
-            off_set = 5
-            text = "{}".format(i_point + 1)
-            cv2.putText(img, text, to_plot(point2d + off_set), cv2.FONT_HERSHEY_SIMPLEX, 0.3, color=(0,0,255))
-        return
 # if __name__ == "__main__":
 #     import FileIO
 #     import json

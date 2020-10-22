@@ -178,7 +178,7 @@ def get_reprojection_error_multi(rtvec: np.ndarray, args):
     avg_loss = 0
     for i in range(n_cams):
         loss = get_reprojection_error(rtvec, [Ms[i], points3d, points2d_object_n_cams[i]])
-        print("cam", i, ":\t", loss)
+        #print("cam", i, ":\t", loss)
         avg_loss += np.average(loss)
         loss_multi_cams[i] = loss
     #print(np.average(loss_multi_cams))

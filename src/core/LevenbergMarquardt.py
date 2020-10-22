@@ -72,6 +72,7 @@ class LevenbergMarquardt(object):
         """
             x0, args_of_func_objective
         """
+        print("\nLM:")
         self.theta = x0
         k = 0  # set the init iter count is 0
         num_params = np.shape(self.theta)[0]  # the number of params
@@ -89,10 +90,7 @@ class LevenbergMarquardt(object):
         log_theta = []
         log_loss  = []
         while ((not stop) and (k < self.n_iters)):
-            k += 1
-            s = 0
             while (1):
-                s += 1
                 #print(k, s)
                 Hessian_LM = A + u * np.eye(num_params)  # calculating Hessian matrix in LM
                 step = self.alpha * np.linalg.inv(Hessian_LM).dot(g)  # calculating the update step
@@ -122,6 +120,15 @@ class LevenbergMarquardt(object):
                         v = 2 * v
                 if (rou > 0 or stop):
                     break
+            k += 1
+
+            n_step = self.n_iters // 100
+            # cond = -1
+            if k % n_step == 0:
+                # cond = np.std(np.array(log_loss[-n_step:]))
+                # print(self.alpha / (1 - self.beta1 ** t) * np.sqrt(1 - self.beta2 ** t))
+                print("iter {:0>4d}/{:0>4d}:\tloss: {:0>4f}".format(k, self.n_iters, residual))
+                # print("iter {:0>4d}/{:0>4d}:\tloss: {:0>4f}\tstd_error: {:0>4f}".format(k, self.n_iters, residual, cond))
 
         return log_loss, log_theta
 

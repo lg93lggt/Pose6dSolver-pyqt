@@ -38,6 +38,7 @@ class Adam(object):
         log_theta = [self.theta]
         
         is_converged = False
+        print("\nAdam:")
         for i in range(self.n_iters):
             self.i_iters = i
             t = i + 1
@@ -54,12 +55,13 @@ class Adam(object):
 
             # is converged?
             n_step = self.n_iters // 100
-            cond = -1
+            # cond = -1
             if self.i_iters % n_step == 0:
-                cond = np.std(np.array(log_loss[-n_step:]))
-                is_converged = False
+                # cond = np.std(np.array(log_loss[-n_step:]))
+                # is_converged = False
                 #print(self.alpha / (1 - self.beta1 ** t) * np.sqrt(1 - self.beta2 ** t))
-                print("iter {:0>4d}/{:0>4d}:\tloss: {:0>4f}\tstd_error: {:0>4f}".format(self.i_iters, self.n_iters, loss, cond))
+                print("iter {:0>4d}/{:0>4d}:\tloss: {:0>4f}".format(self.i_iters, self.n_iters, loss))
+                # print("iter {:0>4d}/{:0>4d}:\tloss: {:0>4f}\tstd_error: {:0>4f}".format(self.i_iters, self.n_iters, loss, cond))
                 #cond = (cond - np.min(cond)) / (np.max(cond) - np.min(cond))
             # if ((0 < cond < 1E-4) and (loss < 2 ** 0.5)) and (not is_converged): #
             #     is_converged = True

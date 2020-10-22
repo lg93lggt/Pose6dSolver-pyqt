@@ -9,4 +9,5 @@ __all__ = [
 	"Points2dChooser",
 	"SolverPoses6d",
 	"Visualizer",
+	"ParticleSwarmOptimization"
 ]
