@@ -118,8 +118,13 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
             points3d_from_chosen = sub_table_view.array_chosen
             points2d_from_image  = np.array([])
             n_rows_tmp         = points3d_from_chosen.shape[0]
+
             if name_obj in self.points2d_objs.keys():
                 points2d_from_image = self.points2d_objs[name_obj]
+                if points2d_from_image is None:
+                    texts2.append("")
+                    texts1.append("")
+                    return 
             for i_row in range(n_rows_tmp):
                 texts2.append(points3d_from_chosen[i_row])
                 if len(points2d_from_image) == len(points3d_from_chosen):
@@ -130,6 +135,7 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
             texts1.append("")
             n_rows += n_rows_tmp
             n_rows += 1
+            return
         
         # 设置子控件
         self.table_widget_show_points.setColumnCount(2)
@@ -152,6 +158,8 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
         self.img_show = self.img_raw.copy()
         # 绘制已确定点
         for name_obj in self.points2d_objs.keys():
+            if self.points2d_objs[name_obj] is None:
+                continue
             for point in self.points2d_objs[name_obj]:
                 self.img_show = cv2.circle(self.img_show, (point[0], point[1]), 1, (0, 255, 0))
         # 绘制待确定点
@@ -324,7 +332,7 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
                 if self.debug:
                     print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_choose_points2d_successed.signal))
             else:
-                print("点数不正确!")
+                print("点数不正确!{}/{}".format(n_points_tmp, n_points_obj))
         self._update_table_widget_show_points()
         return
 

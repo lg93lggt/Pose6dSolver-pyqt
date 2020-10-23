@@ -80,12 +80,12 @@ class ManualPoseWidget(QWidget, Ui_ManualPoseWidget.Ui_Form):
 
     def set_rtvec(self, rtvec: np.ndarray):
         try:
-            self.double_spin_box_rx.setText(str(rtvec[0]))
-            self.double_spin_box_ry.setText(str(rtvec[1]))
-            self.double_spin_box_rz.setText(str(rtvec[2]))
-            self.double_spin_box_tx.setText(str(rtvec[3]))
-            self.double_spin_box_ty.setText(str(rtvec[4]))
-            self.double_spin_box_tz.setText(str(rtvec[5]))
+            self.double_spin_box_rx.setValue(rtvec[0])
+            self.double_spin_box_ry.setValue(rtvec[1])
+            self.double_spin_box_rz.setValue(rtvec[2])
+            self.double_spin_box_tx.setValue(rtvec[3])
+            self.double_spin_box_ty.setValue(rtvec[4])
+            self.double_spin_box_tz.setValue(rtvec[5])
         except :
             print("rtvec 不正确")
 

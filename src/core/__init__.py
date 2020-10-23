@@ -2,6 +2,7 @@
 __all__ = [
 	"Adam",
 	"CalibratorByDLT",
+	"Conic",
 	"eps",
 	"eval",
 	"FileIO",

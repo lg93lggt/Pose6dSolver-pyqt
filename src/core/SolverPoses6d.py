@@ -16,7 +16,7 @@ from core.LevenbergMarquardt import LevenbergMarquardt
 from core.ParticleSwarmOptimization import ParticleSwarmOptimization
 from core import Visualizer
 from core import FileIO
-
+from core import Conic
 
 class SolverPoses6d(object):
     def __init__(self, name_opt_method, **kwargs) -> None:
@@ -77,7 +77,7 @@ class SolverPoses6d(object):
             self.pso.run(self.mats_projections_for_n_cams, self.points3d, self.points2d_of_n_cams)
             theta0 = self.pso.global_best
 
-        n_points = self.points2d_of_n_cams[0].shape[0]
+        # n_points = self.points2d_of_n_cams[0].shape[0]
         [log_loss, log_theta] = self.opt.run(theta0, self.mats_projections_for_n_cams, self.points3d, self.points2d_of_n_cams)
         log = np.hstack((np.array(log_theta), np.array(log_loss).reshape((-1, 1))))
         return log
@@ -85,6 +85,32 @@ class SolverPoses6d(object):
     def set_dir_output(self, dir_output: str="./"):
         self.dir_output = dir_output
         return
+
+        
+class SolverPoses6dConic(SolverPoses6d):
+    def __init__(self, name_opt_method, **kwargs):
+        super().__init__(name_opt_method, **kwargs)
+        self.pso = ParticleSwarmOptimization(50, 6, 500)
+        return
+
+    def run(self, theta0=np.zeros(6)):
+        self.pso.set_objective_func(Conic.ellipse_loss_func)
+        self.pso.set_boundery(
+            lower_bound=np.array([-5, -5, -5, -np.pi, -np.pi, -np.pi]),
+            upper_bound=np.array([+5, +5, +5, +np.pi, +np.pi, +np.pi])
+        )
+  
+        self.opt.set_objective_func(Conic.ellipse_loss_func)
+        self.opt.set_jacobian_func(Conic.get_jacobian_matrix)
+
+        #self.opt.set_residual_func(geo.get_residual)
+        if (theta0 == np.zeros(6)).all():
+            self.pso.run(self.mats_projections_for_n_cams, self.points3d, self.points2d_of_n_cams)
+            theta0 = self.pso.global_best
+
+        [log_loss, log_theta] = self.opt.run(np.zeros(6), self.mats_projections_for_n_cams, self.points3d, self.points2d_of_n_cams)
+        log = np.hstack((np.array(log_theta), np.array(log_loss).reshape((-1, 1))))
+        return log
 
 
 
