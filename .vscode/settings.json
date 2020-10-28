@@ -1,3 +1,13 @@
 {
-    "python.pythonPath": "C:\\Users\\Li\\.conda\\envs\\default\\python.exe"
+    "python.pythonPath": "/home/veily/miniconda3/bin/python",
+    "python.testing.unittestArgs": [
+        "-v",
+        "-s",
+        "./src",
+        "-p",
+        "*_test.py"
+    ],
+    "python.testing.pytestEnabled": false,
+    "python.testing.nosetestsEnabled": false,
+    "python.testing.unittestEnabled": true
 }

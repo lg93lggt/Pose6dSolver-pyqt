@@ -108,7 +108,7 @@ class SolverPoses6dConic(SolverPoses6d):
             self.pso.run(self.mats_projections_for_n_cams, self.points3d, self.points2d_of_n_cams)
             theta0 = self.pso.global_best
 
-        [log_loss, log_theta] = self.opt.run(np.zeros(6), self.mats_projections_for_n_cams, self.points3d, self.points2d_of_n_cams)
+        [log_loss, log_theta] = self.opt.run(theta0, self.mats_projections_for_n_cams, self.points3d, self.points2d_of_n_cams)
         log = np.hstack((np.array(log_theta), np.array(log_loss).reshape((-1, 1))))
         return log
 

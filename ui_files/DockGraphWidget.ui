@@ -16,6 +16,9 @@
   <layout class="QGridLayout" name="gridLayout">
    <item row="0" column="0">
     <widget class="QDockWidget" name="dockGraphWidget">
+     <property name="acceptDrops">
+      <bool>false</bool>
+     </property>
      <property name="floating">
       <bool>false</bool>
      </property>
@@ -29,6 +32,9 @@
       <layout class="QHBoxLayout" name="layout_main">
        <item>
         <widget class="QGroupBox" name="groupbox_visualize">
+         <property name="autoFillBackground">
+          <bool>false</bool>
+         </property>
          <property name="title">
           <string>GroupBox</string>
          </property>
@@ -123,6 +129,52 @@
               </property>
              </spacer>
             </item>
+            <item>
+             <widget class="QPushButton" name="pushbtn_show_table">
+              <property name="sizePolicy">
+               <sizepolicy hsizetype="Minimum" vsizetype="Minimum">
+                <horstretch>0</horstretch>
+                <verstretch>0</verstretch>
+               </sizepolicy>
+              </property>
+              <property name="minimumSize">
+               <size>
+                <width>80</width>
+                <height>0</height>
+               </size>
+              </property>
+              <property name="maximumSize">
+               <size>
+                <width>10</width>
+                <height>24</height>
+               </size>
+              </property>
+              <property name="autoFillBackground">
+               <bool>false</bool>
+              </property>
+              <property name="text">
+               <string>隐藏表格</string>
+              </property>
+              <property name="checkable">
+               <bool>true</bool>
+              </property>
+              <property name="checked">
+               <bool>false</bool>
+              </property>
+              <property name="autoRepeat">
+               <bool>false</bool>
+              </property>
+              <property name="autoDefault">
+               <bool>true</bool>
+              </property>
+              <property name="default">
+               <bool>true</bool>
+              </property>
+              <property name="flat">
+               <bool>false</bool>
+              </property>
+             </widget>
+            </item>
            </layout>
           </item>
          </layout>
@@ -157,7 +209,15 @@
             <property name="checkable">
              <bool>false</bool>
             </property>
-            <layout class="QHBoxLayout" name="layout_choose_points"/>
+            <layout class="QHBoxLayout" name="layout_choose_points">
+             <item>
+              <widget class="QTabWidget" name="tab_widget_objs">
+               <property name="currentIndex">
+                <number>-1</number>
+               </property>
+              </widget>
+             </item>
+            </layout>
            </widget>
           </item>
          </layout>
@@ -170,5 +230,38 @@
   </layout>
  </widget>
  <resources/>
- <connections/>
+ <connections>
+  <connection>
+   <sender>pushbtn_show_table</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>groupbox_points</receiver>
+   <slot>setHidden(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>286</x>
+     <y>399</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>504</x>
+     <y>228</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>pushbtn_show_table</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>groupbox_points</receiver>
+   <slot>update()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>286</x>
+     <y>399</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>504</x>
+     <y>228</y>
+    </hint>
+   </hints>
+  </connection>
+ </connections>
 </ui>

@@ -50,12 +50,17 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
         if n_objs_next > n_objs_prev:
             for i_obj in range(n_objs_next):
                 if i_obj >= n_objs_prev: 
-                    table_widget = TableWidget.ObjectTableWidget(self)
-                    table_widget.sig_tabel_double_clicked.connect(self.solt_sub_table_widget_double_clicked)
-                    table_widget.sig_tabel_double_clicked.connect(self.solt_table_widget_show_points_refresh)
-                    table_widget.setObjectName("obj_{:d}".format(i_obj + 1))
-                    self.layout_choose_points.addWidget(table_widget)
-                    self.groupbox_choose_points.setLayout(self.layout_choose_points)
+
+                    sub_table_widget = TableWidget.ObjectTableWidget(self)
+                    sub_table_widget.sig_tabel_double_clicked.connect(self.solt_sub_table_widget_double_clicked)
+                    sub_table_widget.sig_tabel_double_clicked.connect(self.solt_table_widget_show_points_refresh)
+                    sub_table_widget.setObjectName("obj_{:d}".format(i_obj + 1))
+                    layout_tab = QVBoxLayout()
+                    layout_tab.addWidget(sub_table_widget)
+                    sub_table_widget.setLayout(layout_tab)
+                    sub_table_widget.setObjectName("obj_{}".format(i_obj + 1))
+                    self.tab_widget_objs.addTab(sub_table_widget, "物体{}".format(i_obj + 1))
+                    #self.groupbox_choose_points.setLayout(self.layout_choose_points)
         elif  n_objs_next < n_objs_prev:
             for i_obj in range(n_objs_next):
                 if i_obj >= n_objs_next:
@@ -85,7 +90,7 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
         self.graphics_view.setViewportUpdateMode(QGraphicsView.FullViewportUpdate)
         return
 
-        
+
     def imgbgr2item(self, imgbgr):
         img_rgb = cv2.cvtColor(imgbgr, cv2.COLOR_BGR2RGB)
         qimg    = QtGui.QImage(img_rgb, img_rgb.shape[1], img_rgb.shape[0], QtGui.QImage.Format_RGB888)
@@ -100,7 +105,7 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
         # 重载图像控件
         [H_new, W_new] = [round(self.img_raw.shape[0] * self.scale), round(self.img_raw.shape[1] * self.scale)]
         self.img_show = cv2.resize(self.img_show, (W_new, H_new))
-        self.scene.removeItem(self.item) 
+        self.scene.removeItem(self.item)
         self.item = self.imgbgr2item(self.img_show)
         self.scene.addItem(self.item)
         self.scene.setSceneRect(0,0, W_new, H_new)
@@ -135,7 +140,6 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
             texts1.append("")
             n_rows += n_rows_tmp
             n_rows += 1
-            return
         
         # 设置子控件
         self.table_widget_show_points.setColumnCount(2)
@@ -161,10 +165,10 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
             if self.points2d_objs[name_obj] is None:
                 continue
             for point in self.points2d_objs[name_obj]:
-                self.img_show = cv2.circle(self.img_show, (point[0], point[1]), 1, (0, 255, 0))
+                self.img_show = cv2.circle(self.img_show, (point[0], point[1]), 1, (0, 255, 0), 1)
         # 绘制待确定点
         for point in self.points2d_chosen_tmp:
-            self.img_show = cv2.circle(self.img_show, (point[0], point[1]), 1, (0, 0, 255))
+            self.img_show = cv2.circle(self.img_show, (point[0], point[1]), 1, (0, 0, 255), 1)
         return
 
 
@@ -342,8 +346,9 @@ if  __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
     widget = DockGraphWidget(None)
-    img = cv2.imread("C:/Users/Li/Desktop/Pose6dSolver-pyqt/images_calib/1/000_1.jpg")
-    pts_n_objs =[ np.loadtxt("C:/Users/Li/Desktop/Pose6dSolver-pyqt/姿态测量/points3d_calib/obj_1.txt")]
+    img = cv2.imread("../../姿态测量/images_calib/cam_1/scene_1.png")
+    pts_n_objs =[ np.loadtxt("../../姿态测量/points3d_calib/obj_1.txt")]
     widget.init_img(img)
+    widget.init_sub_table_widgets(3)
     widget.show()
     sys.exit(app.exec_())

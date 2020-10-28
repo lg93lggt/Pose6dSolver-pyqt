@@ -9,14 +9,13 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui     import *
 from PyQt5.QtCore    import *
 import numpy as np
-from core import Visualizer
-
-from widgets import TableWidget
-
 
 sys.path.append("..")
 from ui import * 
 from widgets import DockGraphWidget
+from core import Visualizer
+from widgets import TableWidget
+
 
 
 class VisualizeWidget(QWidget, Ui_VisualizeWidget.Ui_Form):

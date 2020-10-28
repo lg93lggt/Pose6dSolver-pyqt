@@ -51,9 +51,9 @@ class FunctionalWidget(QWidget, Ui_FunctionalWidget.Ui_Form):
         self.text_edit_outprint.setTextCursor(cursor)  
         self.text_edit_outprint.ensureCursorVisible()   
 
-    def init_sub_tab_widgets(self, n_obj=1):
+    def init_sub_tab_widgets(self, n_objs=1):
         #self.tab_widget_objs.clear()
-        for i_obj in range(n_obj):
+        for i_obj in range(n_objs):
             if self.get_sub_tab_widget(i_obj) is not None:
                 continue
             name_obj = "obj_{}".format(i_obj + 1)

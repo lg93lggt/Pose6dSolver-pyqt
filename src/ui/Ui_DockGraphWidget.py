@@ -1,9 +1,8 @@
-
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'c:\Users\Li\Desktop\Pose6dSolver-pyqt\ui_files\DockGraphWidget.ui'
+# Form implementation generated from reading ui file '/home/veily/桌面/LiGan/Pose6dSolver-pyqt/ui_files/DockGraphWidget.ui'
 #
-# Created by: PyQt5 UI code generator 5.9.2
+# Created by: PyQt5 UI code generator 5.15.1
 #
 # WARNING! All changes made in this file will be lost!
 
@@ -16,6 +15,7 @@ class Ui_Form(object):
         self.gridLayout = QtWidgets.QGridLayout(Form)
         self.gridLayout.setObjectName("gridLayout")
         self.dockGraphWidget = QtWidgets.QDockWidget(Form)
+        self.dockGraphWidget.setAcceptDrops(False)
         self.dockGraphWidget.setFloating(False)
         self.dockGraphWidget.setFeatures(QtWidgets.QDockWidget.DockWidgetFloatable|QtWidgets.QDockWidget.DockWidgetMovable)
         self.dockGraphWidget.setObjectName("dockGraphWidget")
@@ -25,6 +25,7 @@ class Ui_Form(object):
         self.layout_main = QtWidgets.QHBoxLayout(self.dockWidgetContents)
         self.layout_main.setObjectName("layout_main")
         self.groupbox_visualize = QtWidgets.QGroupBox(self.dockWidgetContents)
+        self.groupbox_visualize.setAutoFillBackground(False)
         self.groupbox_visualize.setObjectName("groupbox_visualize")
         self.layout_visualize = QtWidgets.QVBoxLayout(self.groupbox_visualize)
         self.layout_visualize.setObjectName("layout_visualize")
@@ -55,6 +56,23 @@ class Ui_Form(object):
         self.layout_coord_bar.addWidget(self.label3)
         spacerItem2 = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
         self.layout_coord_bar.addItem(spacerItem2)
+        self.pushbtn_show_table = QtWidgets.QPushButton(self.groupbox_visualize)
+        sizePolicy = QtWidgets.QSizePolicy(QtWidgets.QSizePolicy.Minimum, QtWidgets.QSizePolicy.Minimum)
+        sizePolicy.setHorizontalStretch(0)
+        sizePolicy.setVerticalStretch(0)
+        sizePolicy.setHeightForWidth(self.pushbtn_show_table.sizePolicy().hasHeightForWidth())
+        self.pushbtn_show_table.setSizePolicy(sizePolicy)
+        self.pushbtn_show_table.setMinimumSize(QtCore.QSize(80, 0))
+        self.pushbtn_show_table.setMaximumSize(QtCore.QSize(10, 24))
+        self.pushbtn_show_table.setAutoFillBackground(False)
+        self.pushbtn_show_table.setCheckable(True)
+        self.pushbtn_show_table.setChecked(False)
+        self.pushbtn_show_table.setAutoRepeat(False)
+        self.pushbtn_show_table.setAutoDefault(True)
+        self.pushbtn_show_table.setDefault(True)
+        self.pushbtn_show_table.setFlat(False)
+        self.pushbtn_show_table.setObjectName("pushbtn_show_table")
+        self.layout_coord_bar.addWidget(self.pushbtn_show_table)
         self.layout_visualize.addLayout(self.layout_coord_bar)
         self.layout_main.addWidget(self.groupbox_visualize)
         self.groupbox_points = QtWidgets.QGroupBox(self.dockWidgetContents)
@@ -66,7 +84,7 @@ class Ui_Form(object):
         self.layout_show_points = QtWidgets.QHBoxLayout(self.groupbox_show_points)
         self.layout_show_points.setObjectName("layout_show_points")
         self.table_widget_show_points = QtWidgets.QTableWidget(self.groupbox_show_points)
-        self.table_widget_show_points.setObjectName("tableWidgetShowPoints")
+        self.table_widget_show_points.setObjectName("table_widget_show_points")
         self.table_widget_show_points.setColumnCount(0)
         self.table_widget_show_points.setRowCount(0)
         self.layout_show_points.addWidget(self.table_widget_show_points)
@@ -77,12 +95,18 @@ class Ui_Form(object):
         self.groupbox_choose_points.setObjectName("groupbox_choose_points")
         self.layout_choose_points = QtWidgets.QHBoxLayout(self.groupbox_choose_points)
         self.layout_choose_points.setObjectName("layout_choose_points")
+        self.tab_widget_objs = QtWidgets.QTabWidget(self.groupbox_choose_points)
+        self.tab_widget_objs.setObjectName("tab_widget_objs")
+        self.layout_choose_points.addWidget(self.tab_widget_objs)
         self.layout_points.addWidget(self.groupbox_choose_points)
         self.layout_main.addWidget(self.groupbox_points)
         self.dockGraphWidget.setWidget(self.dockWidgetContents)
         self.gridLayout.addWidget(self.dockGraphWidget, 0, 0, 1, 1)
 
         self.retranslateUi(Form)
+        self.tab_widget_objs.setCurrentIndex(-1)
+        self.pushbtn_show_table.toggled['bool'].connect(self.groupbox_points.setHidden)
+        self.pushbtn_show_table.toggled['bool'].connect(self.groupbox_points.update)
         QtCore.QMetaObject.connectSlotsByName(Form)
 
     def retranslateUi(self, Form):
@@ -90,8 +114,8 @@ class Ui_Form(object):
         Form.setWindowTitle(_translate("Form", "Form"))
         self.groupbox_visualize.setTitle(_translate("Form", "GroupBox"))
         self.label1.setText(_translate("Form", "像素坐标(u, v):"))
+        self.pushbtn_show_table.setText(_translate("Form", "隐藏表格"))
         self.groupbox_points.setTitle(_translate("Form", "点对:"))
         self.groupbox_show_points.setTitle(_translate("Form", "显示:"))
         self.groupbox_choose_points.setTitle(_translate("Form", "选择:"))
-
 

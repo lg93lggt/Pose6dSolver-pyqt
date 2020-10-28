@@ -52,6 +52,11 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
         self.dialog_open_project = OpenProject.OpenProjectDialog(self)
         self.widget_edit_project = EditProject.EditProjectWidget(self)
 
+        # Lv1控件设置大小
+        self.scenes_table_area.setMaximumWidth(200)
+        self.visualize_area.setMinimumWidth(800)
+        self.functional_area.setMaximumWidth(200)
+
         # Lv1控件设置名称
         self.scenes_table_area.setObjectName("tableScenesArea")
         self.visualize_area.setObjectName("visualizeArea")
@@ -62,7 +67,7 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
 
         # Lv2控件初始化n_obj=1
         self.visualize_area.init_sub_dock_widgets(n_cams=1)
-        self.functional_area.init_sub_tab_widgets(n_obj=1)
+        self.functional_area.init_sub_tab_widgets(n_objs=1)
 
         self.slot_init_widgets()
 
@@ -72,9 +77,9 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
         self.functional_area.sig_btn_run_clicked.connect(self.slot_run_with_mode)
 
         # 排版
-        self.layout_main.addWidget(self.scenes_table_area)
-        self.layout_main.addWidget(self.visualize_area)
-        self.layout_main.addWidget(self.functional_area)
+        self.layout_main.addWidget(self.scenes_table_area, 0, 0)
+        self.layout_main.addWidget(self.visualize_area, 0, 1)
+        self.layout_main.addWidget(self.functional_area, 0, 5)
 
         # 激活pyqtSlot装饰器
         QtCore.QMetaObject.connectSlotsByName(self)

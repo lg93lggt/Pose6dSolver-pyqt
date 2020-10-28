@@ -189,7 +189,7 @@ class FileIO(object):
         return
         
     def make_dirs(self):
-        for mode in ["calib", " solve"]:
+        for mode in ["calib", "solve"]:
             for name_dir in self.dir_lv1:
                 make_dir(os.path.join(self.struct.dir_root, "{}_{}".format(name_dir, mode)))
         return
