@@ -225,3 +225,11 @@ def get_jacobian_matrix_multi(params, func_objective, args):
         dl_of_dp = (loss_delta_p - loss_delta_n) / (2 * delta)
         J[idx_parm] = dl_of_dp
     return J
+
+def rotation2d(theta):
+    R = np.eye(3)
+    R[:2, :2] = np.array([
+        [ np.cos(theta), np.sin(theta)],
+        [-np.sin(theta), np.cos(theta)]
+    ])
+    return R

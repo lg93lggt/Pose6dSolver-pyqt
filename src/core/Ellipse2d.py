@@ -5,30 +5,40 @@ from typing import Any, Dict, List, Sequence, Tuple
 
 import cv2
 import numpy as np
-from . import  eps 
-from .Visualizer import  Visualizer 
-from .Adam import  Adams 
+sys.path.append("..")
+from core import eps 
+from core import geometry as geo
+from core import Conic
 
 
-class Conic2d(object):
+class Ellipse2d(Conic.Conic2d):
     """
-    Conic(*args): \n
-        1: init by 6 pars \n
-        ax^2 + bxy + cy^2 + dx + ey + f = 0
-
-        2: init by mat C \n
-        x.T * C * x = 0
+    Conic(input_mat):           \\
+        init by mat C           \\
+        x.T * C * x = 0         \\
+                                \\
+    input argument:             \\
+        input_mat:              \\
+            type:   np.ndarray  \\
+            shape:  3x3
     """
-    def __init__(self, *args) -> None:
-        if args is None:
+    def __init__(self, input_mat: np.ndarray=None) -> None:
+        """
+        input argument: 
+            input_mat: 
+                type:   np.ndarray 
+                shape:  3x3
+        """
+        if input_mat is None:
             self.mat = np.zeros((3, 3))
-        elif len(args) == 1:
-            if type(args[0]) is np.ndarray:
-                input_mat = args[0]
-                self._set_by_mat(mat_input=input_mat)
+        else:
+            if type(input_mat) is np.ndarray:
+                self._set_by_mat(input_mat=input_mat)
         return
 
     def __refresh(self):
+        if self.mat[-1, -1] != 0:
+            self.mat = -self.mat / self.mat[-1, -1]
         self.a = self.mat[0, 0]
         self.b = self.mat[0, 1] * 2
         self.c = self.mat[1, 1]
@@ -38,22 +48,20 @@ class Conic2d(object):
         self._get_pars()
         return
 
-    
-    def _set_by_mat(self, mat_input: np.ndarray) -> None:
+    def _set_by_mat(self, input_mat: np.ndarray) -> None:
         """
-        ax^2 + bxy + cy^2 + dx + ey + f = 0 \n
-        x.T * C * x = 0 \n
-        C = \n
-        [[  a, b/2, d/2], \n
-         [b/2,   c, e/2], \n
-         [d/2, e/2,   f]] \n
+        ax^2 + bxy + cy^2 + dx + ey + f = 0 \\
+        x.T * C * x = 0                     \\
+                                            \\
+        C =                                 \\
+        [[  a, b/2, d/2],                   \\
+         [b/2,   c, e/2],                   \\
+         [d/2, e/2,   f]]                   
         """
-        if mat_input.size == 9:
-            if mat_input.shape != (3, 3):
-                mat_input = mat_input.reshape(3, 3)
-            if mat_input[-1, -1] != 0:
-                mat_input = mat_input / mat_input[-1, -1]
-            self.mat = mat_input
+        if input_mat.size == 9:
+            if input_mat.shape != (3, 3):
+                input_mat = input_mat.reshape(3, 3)
+            self.mat = input_mat
             self.__refresh()
 
         else:
@@ -62,13 +70,14 @@ class Conic2d(object):
 
     def _set_by_5points2d(self, points2d: np.ndarray) -> None:
         """
-        A * x = 0 \n
-        A = \n
-        [u^2, uv, v^2, u, v, 1] \n
-        ...                     \n
-        [  0,  0,   0, 0, 0, 1] \n
-        
-        x = \n
+        A * x = 0               \\
+                                \\
+        A =                     \\
+        [u^2, uv, v^2, u, v, 1] \\
+        ...                     \\
+        [  0,  0,   0, 0, 0, 1] \\
+                                \\
+        x =                     \\
         [  a,  b,   c, d, e, f] 
         """
         # check
@@ -137,12 +146,6 @@ class Conic2d(object):
     #     mat_line = get_tangent_line_of_conic(self.mat, point_tangent.mat)    
     #     return Line2D(mat_line)
 
-    def transform_by_homography_mat(self, mat_homography) -> None:
-        mat_transed = get_transformed_conic_mat(self.mat, mat_homography)
-        self.mat = mat_transed
-        self.__refresh()
-        return 
-
     def draw(self, img: np.ndarray, color=(255, 0, 0), thickness=1) -> None:
         self._get_pars()
         pars_plot = (tuple(self.point2d_center), (self.radius_u * 2, self.radius_v * 2),  self.theta_drawn)
@@ -154,11 +157,11 @@ class Conic2d(object):
 
     def _get_pars(self):
         """
-        [x, y] @ R = [x_, y_]
-        [d, e] @ R = [d_, e_]
-        evec0 * x_^2 + evec1 * y_^2 + d_ * x_ + e_ * y_ + f = 0
-        evec0 * ((x_ + s0)^2 - s0^2) + evec1 * ((y_ + s1)^2 - s1^2) + f = 0
-        s0 = 0.5 * d_ / evec0; s1 = 0.5 * e_ / evec1 
+        [x, y] @ R = [x_, y_]                                               \\
+        [d, e] @ R = [d_, e_]                                               \\
+        evec0 * x_^2 + evec1 * y_^2 + d_ * x_ + e_ * y_ + f = 0             \\
+        evec0 * ((x_ + s0)^2 - s0^2) + evec1 * ((y_ + s1)^2 - s1^2) + f = 0 \\
+        s0 = 0.5 * d_ / evec0; s1 = 0.5 * e_ / evec1                        \\
         u = evec0 * s0^2 + evec1 * s1^2 - f 
         """
         evec, R_ = np.linalg.eig(self.mat[:2, :2]) # R.I = R.T , orthogonality
@@ -208,15 +211,32 @@ class Conic2d(object):
         self.mat_H = T @ R @ S
         return 
 
+    def transform_by_homography_mat(self, mat_homography) -> None:
+        mat_transed = get_transformed_conic_mat(self.mat, mat_homography)
+        self.mat = mat_transed
+        self.__refresh()
+        return 
 
-class ConicStd(Conic2d):
-    def __init__(self) -> None:
-        input_mat = np.array([
-            [-1,  0, 0],
-            [ 0, -1, 0],
-            [ 0,  0, 1]
-        ])
-        self._set_by_mat(input_mat)
+    def get_transformed_conic(self, mat_homography) -> None:
+        mat_transed = get_transformed_conic_mat(self.mat, mat_homography)
+        new_conic = Ellipse2d(mat_transed)
+        return new_conic
+    
+
+class Ellipse2dStd(Ellipse2d):
+    def __init__(self, input_vec: np.ndarray=None) -> None:
+        if input_vec is None:
+            mat = np.array([
+                [1,  0,  0],
+                [0,  1,  0],
+                [0,  0, -1]
+            ])
+        else:
+            if input_vec.shape == (2, ):
+                mat = np.diag(np.append(input_vec, -1))
+            else:
+                raise IndexError("shape should be (3, )")
+        self._set_by_mat(mat)
         return
 
 
@@ -348,44 +368,56 @@ def main(args):
             J[idx_parm] = dl_of_dp
         return J
 
-    vis = Visualizer(mode="solve")
-    fio = FileIO(mode="solve")
-    fio.set_input_images_motherfolder_dir(args.input_imgs)
-    fio.set_input_points_motherfolder_dir(args.input_pts2d)
-    fio.set_input_cameras_pars_motherfolder_dir(args.input_cams)
-    fio.set_output_motherfolder_dir(args.output)
+if __name__ == "__main__":
+    from core import FileIO
+    from core import Visualizer 
+    
+    cv2.namedWindow("", cv2.WINDOW_FREERATIO)
+    
+    vis = Visualizer.Visualizer()
+    fio = FileIO.FileIO()
+    fio.load_project_from_filedir("../../姿态测量")
 
-    points3d = fio.load_points3d(args.input_pts3d)
-    n_cams = len(fio.pths_input_points2d)
-    n_images = len(fio.pths_input_points2d[0])
+    cam = fio.load_camera_pars(0)
+    mat_proj = cam["intrin"] @ cam["extrin"]
 
-    cameras_pars = []
-    Ms = []
-    for i_cam in range(n_cams):
-        camera_pars = fio.load_camera_pars(fio.pths_input_cameras_pars[i_cam][0])
-        cameras_pars.append(camera_pars)
-        M = cameras_pars[i_cam]["intrin"] @ cameras_pars[i_cam]["extrin"]
-        Ms.append(M)
+    p2d_obj = fio.load_points2d("solve", 0, 0, 0)
 
-    for idx_image in range(n_images):
-        print("{:d} / {:d}".format(idx_image + 1, n_images))
+    p3d_src = fio.loadz_points3d("solve", 0, 0, 0)["array"]
+    p2d_src = geo.project_points3d_to_2d(np.array([0., 0, 0, 0.01, -0.02, 0]), mat_proj, p3d_src)
 
-        points2d_of_n_cams = []
-        for i_cam in range(n_cams):
-            points2d = fio.load_points2d(fio.pths_input_points2d[i_cam][idx_image])
-            points2d_of_n_cams.append(points2d)
+    img = fio.load_image_raw("solve", 0, 0)
 
-    for i_sense in range(n_images):
-        imgs =[]
-        for i_cam in  range(n_cams):
-            imgs.append(fio.pths_input_images[i_cam][i_sense])
 
-        opt = Adam(100000, 0.001, 0.9, 0.999)
-        opt.set_objective_func(ellipse_loss_func3)
-        opt.set_jacobian_func(get_jacobian_matrix)
-        log_loss, log_theta = opt.run(np.zeros(6),  Ms, points3d, points2d_of_n_cams)
-        theta = log_theta[np.argmin(log_loss)]
+    ellipse_obj = Ellipse2d()
+    ellipse_obj._set_by_5points2d(p2d_obj[1:])
 
+    ellipse_src = Ellipse2d()
+    ellipse_src._set_by_5points2d(p2d_src[1:])
+
+    ellipse_obj = Ellipse2d()
+    ellipse_obj._set_by_5points2d(p2d_obj[1:])
+
+    T_obj = np.eye(3)
+    T_obj[:2, -1] = -ellipse_obj.point2d_center
+    R_obj = geo.rotation2d(-ellipse_obj.theta_rad)
+    ellipse_obj_rt = ellipse_obj.get_transformed_conic(R_obj @ T_obj)
+    ellipse_src_rt = ellipse_src.get_transformed_conic(R_obj @ T_obj)
+
+    ellipse_std = Ellipse2dStd(np.array([1/(4**2), 1/(2**2)]))
+
+    ellipse_obj_rt.transform_by_homography_mat(np.array([[1,0,320.],[0,1,240],[0,0,1]]))
+    ellipse_src_rt.transform_by_homography_mat(np.array([[1,0,320.],[0,1,240],[0,0,1]]))
+    ellipse_std.transform_by_homography_mat(np.array([[1,0,320.],[0,1,240],[0,0,1]]))
+
+    ellipse_src.draw(img, color=(0, 0, 255), thickness=1)
+    ellipse_obj.draw(img, color=(0, 255, 0), thickness=1)
+    ellipse_obj_rt.draw(img, color=(0, 255, 255), thickness=1)
+    ellipse_src_rt.draw(img, color=(255, 0, 255), thickness=1)
+    ellipse_std.draw(img, color=(255, 255, 255), thickness=1)
+
+    cv2.imshow("", img)
+    cv2.waitKey()
+    print()
             
-
 
