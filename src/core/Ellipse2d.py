@@ -1,5 +1,5 @@
 
-from math import nan
+import enum
 import sys
 from typing import Any, Dict, List, Sequence, Tuple
 
@@ -121,7 +121,6 @@ class Ellipse2d(Conic.Conic2d):
         str3 = "center: ({:3f}, {:3f}), \tradius: ({:3f}, {:3f}), \ttheta_angle: {:3f}".format(self.point2d_center[0], self.point2d_center[1], self.radius_u, self.radius_v, 180 * self.theta_rad / np.pi)
 
         return  str1 + str2 + str3
-            
 
     def __mat_to_vec(self, mat):            
         a = mat[0, 0]
@@ -221,7 +220,52 @@ class Ellipse2d(Conic.Conic2d):
         mat_transed = get_transformed_conic_mat(self.mat, mat_homography)
         new_conic = Ellipse2d(mat_transed)
         return new_conic
-    
+
+    def cal_angle_from_point2d_to_center_on_ellipse(self, point2d: List or np.ndarray) -> float:
+        TI = np.linalg.inv(self.mat_T)
+        # check
+        
+        A = self.radius_u + eps.eps
+        # B = self.radius_v + eps.eps
+        [u_, v_, _] = TI @ np.array([point2d[0], point2d[1], 1]).reshape(-1, 1)
+        if   v_ > 0:
+            angle = np.arccos(u_ / A)
+        elif v_ < 0:
+            angle = 2*np.pi - np.arccos(u_ / A)
+        else: # v_ = 0
+            angle = 0
+        return angle
+
+    def cal_sector_area(self, point2d_src: List or np.ndarray, point2d_dst: List or np.ndarray):
+        A = self.radius_u + eps.eps
+        B = self.radius_v + eps.eps
+        theta1 = self.cal_angle_from_point2d_to_center(point2d_src)
+        theta2 = self.cal_angle_from_point2d_to_center(point2d_dst)
+
+        if   theta1 < theta2:
+            area_sector = (theta2 - theta1) * A * B / 2
+        elif theta1 > theta2:
+            area_sector = np.pi * A * B - (theta1 - theta2) * A * B / 2
+        else: # v_ = 0
+            area_sector =  0
+        return area_sector
+
+    def cal_segment_area(self, point2d_src: List or np.ndarray, point2d_dst: List or np.ndarray):
+        theta1 = self.cal_angle_from_point2d_to_center(point2d_src)
+        theta2 = self.cal_angle_from_point2d_to_center(point2d_dst)
+        area_sector = self.cal_sector_area(point2d_src, point2d_dst)
+        # B = self.radius_v + eps.eps
+        [u1, v1] = point2d_src
+        [u2, v2] = point2d_dst
+
+        if   theta1 < theta2:
+            area_segment = area_sector - 0.5*np.abs(u1*v2 - u2*v1)
+        elif theta1 > theta2:
+            area_segment = area_sector + 0.5*np.abs(u1*v2 - u2*v1)
+        else: # theta1 = theta2:
+            area_segment = 0
+        return area_segment
+
 
 class Ellipse2dStd(Ellipse2d):
     def __init__(self, input_vec: np.ndarray=None) -> None:
@@ -239,6 +283,148 @@ class Ellipse2dStd(Ellipse2d):
         self._set_by_mat(mat)
         return
 
+    def cal_sector_area(self, point2d_src, point2d_dst):
+        A = self.radius_u + eps.eps
+        B = self.radius_v + eps.eps
+        [u1, v1] = point2d_src
+        [u2, v2] = point2d_dst
+        if v1 >= 0:
+            theta1 = np.arccos(u1 / A)
+        else:
+            theta1 = 2*np.pi - np.arccos(u1 / A)
+
+        if v2 >= 0:
+            theta2 = np.arccos(u2 / A)
+        else:
+            theta2 = 2*np.pi - np.arccos(u2 / A)
+
+        if   theta1 < theta2:
+            area_sector = (theta2 - theta1) * A * B / 2
+        elif theta1 > theta2:
+            area_sector = np.pi * A * B - (theta1 - theta2) * A * B / 2
+        else:
+            area_sector =  0
+        return area_sector
+
+    def cal_segment_area(self, point2d_src, point2d_dst):
+        area_sector = self.cal_sector_area(point2d_src, point2d_dst)
+        A = self.radius_u + eps.eps
+        B = self.radius_v + eps.eps
+        [u1, v1] = point2d_src
+        [u2, v2] = point2d_dst
+        if v1 >= 0:
+            theta1 = np.arccos(u1 / A)
+        else:
+            theta1 = 2*np.pi - np.arccos(u1 * self.a)
+
+        if v2 >= 0:
+            theta2 = np.arccos(u2 / A)
+        else:
+            theta2 = 2*np.pi - np.arccos(u2 / A)
+
+        if   theta1 < theta2:
+            area_segment = area_sector - 0.5*np.abs(u1*v2 - u2*v1)
+        elif theta1 > theta2:
+            area_segment = area_sector + 0.5*np.abs(u1*v2 - u2*v1)
+        else:
+            area_segment = 0
+        return area_segment
+
+
+def cal_characteristic_polynomial_of_pencil_between_2ellipses(ellipse_src, ellipse_dst):
+    [a1, b1, c1, d1, e1, f1] = [ellipse_src.a, ellipse_src.b, ellipse_src.c, ellipse_src.d, ellipse_src.e, ellipse_src.f]
+    [a2, b2, c2, d2, e2, f2] = [ellipse_dst.a, ellipse_dst.b, ellipse_dst.c, ellipse_dst.d, ellipse_dst.e, ellipse_dst.f]
+    
+    _d = a1*(c1*f1 - e1**2) - (c1 * d1**2 - 2*b1*d1*e1 + b1**2 * f1)
+    _a = ( \
+        a1*(c1*f2 - 2*e1*e2 + c2*f1) + \
+        2*b1*(d1*e2 - b2*f1 + d2*e1) + \
+        2*d1*(b2*e1 - c1*d2) - \
+        (b1**2 * f2 + c2 * d1**2 + a2 * e1**2) + \
+        (a2*c1*f1) \
+        ) / _d
+    _b = ( \
+        a1*(c2*f2 - e1**2) + \
+        2*b1*(d2*e2 - b2*f2) + \
+        2*d1*(b2*e2 - c2*d2) + \
+        c1*(a2*f2 - d2**2) + \
+        2*e1*(b2*d2 - a2*e2) + \
+        f1*(a2*c2 - b2**2) \
+    ) / _d
+    _c = (
+        a2*(c2*f2 - e2**2) - \
+        (b2**2 * f2 - 2*b2*d2*e2 + c2 * d2**2)
+    )
+    return [_a, _b, _c]
+
+class RelativePositionOfTwoEllipses(enum.Enum):
+    COINCIDENT                               = 0
+    TRANSVERSAL_AT_4_PTS                     = 1
+    TRANSVERSAL_AT_2_PTS                     = 2
+    SEPARATED                                = 3
+    CONTAINED                                = 4
+    TRANSVERSAL_AT_2_PTS_AND_TANGENT_AT_1_PT = 5
+    EXTERNALLY_TANGENT_AT_1_PT               = 6
+    INTERNALLY_TANGENT_AT_1_PT               = 7
+    INTERNALLY_TANGENT_AT_2_PTS              = 8
+    TRANSVERSAL_AT_1_PT_AND_TANGENT_AT_1_PT  = 9
+
+def classify_relative_position_between_2ellipes(ellipse_src, ellipse_dst):
+    [_a, _b, _c] = cal_characteristic_polynomial_of_pencil_between_2ellipses(ellipse_src, ellipse_dst)
+    s4 = -27 * _c**3 + 18*_a*_b*_c + _a**2 * _b**2 - 4 * _a**3*_c - 4 * _b**3
+    s1 = _a
+    s2 = _a**2 - 3*_b
+    s3 = 3*_a*_c + _a**2 * _b - 4 * _b**2
+    if   s4 < 0: # case 2
+        return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_2_PTS
+    elif s4 > 0:
+        if (s1 > 0) and (s2 > 0) and (s3 > 0): # case 1, 4
+            _u =( -_a - np.sqrt(s2)) / 3
+            _v =( -_a + np.sqrt(s2)) / 3
+            _M = _u * ellipse_src.mat + ellipse_dst.mat
+            _N = _v * ellipse_src.mat + ellipse_dst.mat
+            if ( \
+                ((_M[1, 1] * np.linalg.det(_M) > 0) and (_M[0, 0] * np.linalg.det(_M[1:, 1:]) > 0)) or \
+                ((_N[1, 1] * np.linalg.det(_M) > 0) and (_N[0, 0] * np.linalg.det(_N[1:, 1:]) > 0))
+            ): # case 4
+                return RelativePositionOfTwoEllipses.CONTAINED
+            else: # case 1
+                return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_4_PTS
+        else: # case 3
+            return RelativePositionOfTwoEllipses.SEPARATED
+    else:
+        if (s1 > 0) and (s2 > 0) and (s3 < 0): # case 6
+            return RelativePositionOfTwoEllipses.EXTERNALLY_TANGENT_AT_1_PT
+        elif (s1 > 0) and (s2 > 0) and (s3 > 0): # case 4, 5, 7, 8
+            alpha = (4*_a*_b - _a**3 - 9*_c) / (s2) 
+            beta  = (9*_c - _a*_b) / (s2) 
+            _M = beta  * ellipse_src.mat + ellipse_dst.mat
+            _N = alpha * ellipse_src.mat + ellipse_dst.mat
+            if np.linalg.det(_M[:-1, :-1]) > 0:
+                if np.linalg.det(_N[:-1, :-1]) > 0: # case 5
+                    return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_2_PTS_AND_TANGENT_AT_1_PT
+                else: # case 7
+                    return RelativePositionOfTwoEllipses.INTERNALLY_TANGENT_AT_1_PT
+            elif (np.linalg.det(_M[1:, 1:]) + np.linalg.det(_M[[0, 2], [0, 2]]))> 0: # case 4
+                return RelativePositionOfTwoEllipses.CONTAINED
+            else: # case 8
+                return RelativePositionOfTwoEllipses.INTERNALLY_TANGENT_AT_2_PTS
+        else: # case 7, 9, 0
+            alpha = -_a / 3
+            _M = alpha * ellipse_src.mat + ellipse_dst.mat
+            if ( \
+                ((np.linalg.det(_M) != 0) and (np.linalg.det(_M[:-1, :-1]) <= 0)) or \
+                ( \
+                    (np.linalg.det(_M) != 0) and \
+                    (np.linalg.det(_M[:-1, :-1]) <= 0) and \
+                    ((np.linalg.det(_M) / (_M[0, 0] + _M[1, 1])) < 0)
+                )
+            ): # case 0
+                return RelativePositionOfTwoEllipses.COINCIDENT
+            elif ((np.linalg.det(_M) != 0) and (np.linalg.det(_M[:-1, :-1]) > 0)): # case 9
+                return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_1_PT_AND_TANGENT_AT_1_PT
+            else: # case 7
+                return RelativePositionOfTwoEllipses.INTERNALLY_TANGENT_AT_1_PT
 
 def get_tangent_line_of_conic(mat_conic, mat_point_tangent):
     mat_line = mat_conic @ mat_point_tangent
@@ -251,8 +437,9 @@ def get_transformed_conic_mat(mat_conic, mat_homography):
     x2.T * C2 * x2 = 0
     """
     H_inv = np.linalg.inv(mat_homography)
-    mat_coic_tarns = H_inv.T @ mat_conic @ H_inv
-    return mat_coic_tarns
+    mat_conic_tarns = H_inv.T @ mat_conic @ H_inv
+    mat_conic_tarns = -mat_conic_tarns / mat_conic_tarns[-1, -1]
+    return mat_conic_tarns
 
 def get_homography_mat_from_2conics(conic_source, conic_target):
     """
@@ -265,8 +452,6 @@ def get_homography_mat_from_2conics(conic_source, conic_target):
 
 
 
-
-
 def main(args):
     def ellipse_loss_func(rtvec: np.ndarray, args: List):
         """
@@ -276,7 +461,7 @@ def main(args):
         points3d = args[1]
         C = args[2]
         points2d = geo.project_points3d_to_2d(rtvec, M, points3d)
-        E = Conic2d()
+        E = Ellipse2d()
         E._set_by_5points2d(points2d)
         
         delta = (C.point2d_center - E.point2d_center)
@@ -299,8 +484,8 @@ def main(args):
         points2d_obj_for_all = args[2]
         def loss_fuc(rtvec, M, points2d_obj):
             points2d_pro = geo.project_points3d_to_2d(rtvec, M, points3d)
-            C = Conic2d()
-            E = Conic2d()
+            C = Ellipse2d()
+            E = Ellipse2d()
             C._set_by_5points2d(points2d_obj[1:])
             E._set_by_5points2d(points2d_pro[1:])
             D = (np.triu(C.mat) - np.triu(E.mat)) / C.mat
@@ -323,8 +508,8 @@ def main(args):
         points2d_obj_for_all = args[2]
         def loss_fuc(rtvec, M, points2d_obj):
             points2d_pro = geo.project_points3d_to_2d(rtvec, M, points3d)
-            C = Conic2d()
-            E = Conic2d()
+            C = Ellipse2d()
+            E = Ellipse2d()
             C._set_by_5points2d(points2d_obj[1:])
             E._set_by_5points2d(points2d_pro[1:])
             
@@ -372,8 +557,6 @@ if __name__ == "__main__":
     from core import FileIO
     from core import Visualizer 
     
-    cv2.namedWindow("", cv2.WINDOW_FREERATIO)
-    
     vis = Visualizer.Visualizer()
     fio = FileIO.FileIO()
     fio.load_project_from_filedir("../../姿态测量")
@@ -408,7 +591,7 @@ if __name__ == "__main__":
 
     ellipse_obj_rt.transform_by_homography_mat(np.array([[1,0,320.],[0,1,240],[0,0,1]]))
     ellipse_src_rt.transform_by_homography_mat(np.array([[1,0,320.],[0,1,240],[0,0,1]]))
-    ellipse_std.transform_by_homography_mat(np.array([[1,0,320.],[0,1,240],[0,0,1]]))
+    # ellipse_std.transform_by_homography_mat(np.array([[1,0,320.],[0,1,240],[0,0,1]]))
 
     ellipse_src.draw(img, color=(0, 0, 255), thickness=1)
     ellipse_obj.draw(img, color=(0, 255, 0), thickness=1)
@@ -416,6 +599,15 @@ if __name__ == "__main__":
     ellipse_src_rt.draw(img, color=(255, 0, 255), thickness=1)
     ellipse_std.draw(img, color=(255, 255, 255), thickness=1)
 
+    area1 = ellipse_std.cal_segment_area(
+        [4/np.sqrt(5), 4/np.sqrt(5)], [-3, -np.sqrt(7)/2]
+    )
+
+    area2 = ellipse_std.cal_segment_area(
+        [-3, -np.sqrt(7)/2], [4/np.sqrt(5), 4/np.sqrt(5)]
+    )
+    cal_characteristic_polynomial_of_pencil_between_2ellipses(ellipse_src_rt, ellipse_obj_rt)0000000000000
+    cv2.namedWindow("", cv2.WINDOW_FREERATIO)
     cv2.imshow("", img)
     cv2.waitKey()
     print()
