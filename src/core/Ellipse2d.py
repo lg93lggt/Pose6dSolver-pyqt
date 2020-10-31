@@ -450,109 +450,6 @@ def get_homography_mat_from_2conics(conic_source, conic_target):
     H =  H1 @ np.linalg.inv(H0)
     return H
 
-
-
-def main(args):
-    def ellipse_loss_func(rtvec: np.ndarray, args: List):
-        """
-        rtvec, [mat_projection, points3d_project, conic2d_object]
-        """
-        M = args[0]
-        points3d = args[1]
-        C = args[2]
-        points2d = geo.project_points3d_to_2d(rtvec, M, points3d)
-        E = Ellipse2d()
-        E._set_by_5points2d(points2d)
-        
-        delta = (C.point2d_center - E.point2d_center)
-        
-        img1 = np.zeros((480, 640))
-        img2 = np.zeros((480, 640))
-        C.draw(img1,thickness=-1)
-        E.draw(img2,thickness=-1)
-        from new_method import d_iou
-        diou = d_iou(img1, img2)
-        loss = 1-diou
-        return loss
-
-    def ellipse_loss_func2(rtvec: np.ndarray, args: List):        
-        """
-        rtvec, [mat_projection, points3d_project, points2d_object]
-        """
-        Ms = args[0]
-        points3d = args[1]
-        points2d_obj_for_all = args[2]
-        def loss_fuc(rtvec, M, points2d_obj):
-            points2d_pro = geo.project_points3d_to_2d(rtvec, M, points3d)
-            C = Ellipse2d()
-            E = Ellipse2d()
-            C._set_by_5points2d(points2d_obj[1:])
-            E._set_by_5points2d(points2d_pro[1:])
-            D = (np.triu(C.mat) - np.triu(E.mat)) / C.mat
-            l2 = np.linalg.norm(points2d_pro[0] - points2d_obj[0]) 
-            return np.linalg.norm(D) + l2
-        n_cams = 2
-        loss_total = 0
-        for i_cam in range(n_cams):
-            loss = loss_fuc(rtvec, Ms[i_cam], points2d_obj_for_all[i_cam])
-            loss_total += loss
-            
-        return loss_total / n_cams
-
-    def ellipse_loss_func3(rtvec: np.ndarray, args: List):
-        """
-        rtvec, [mat_projection, points3d_project, points2d_object]
-        """
-        Ms = args[0]
-        points3d = args[1]
-        points2d_obj_for_all = args[2]
-        def loss_fuc(rtvec, M, points2d_obj):
-            points2d_pro = geo.project_points3d_to_2d(rtvec, M, points3d)
-            C = Ellipse2d()
-            E = Ellipse2d()
-            C._set_by_5points2d(points2d_obj[1:])
-            E._set_by_5points2d(points2d_pro[1:])
-            
-            delta = (C.point2d_center - E.point2d_center)
-            
-            mask1 = np.zeros((480, 640))
-            mask2 = np.zeros((480, 640))
-            C.draw(mask1, thickness=-1)
-            E.draw(mask2, thickness=-1)
-            from new_method import d_iou, m_iou
-            
-            l2 = np.linalg.norm(points2d_pro[0] - points2d_obj[0])
-            loss = 1 - d_iou(mask1, mask2) + l2 
-            return loss
-
-        n_cams = 2
-        loss_total = 0
-        for i_cam in range(n_cams):
-            loss = loss_fuc(rtvec, Ms[i_cam], points2d_obj_for_all[i_cam])
-            loss_total += loss
-            
-        return loss_total / n_cams
-
-    def get_jacobian_matrix(params, func_objective, args_of_func_objective):
-        """
-        params, func_objective, args_of_func_objective
-        """
-        delta = 1E-3
-        n_objects = 1
-        n_params = params.shape[0]
-        J = np.zeros(n_params)
-        for [idx_parm, param] in enumerate(params):
-            params_delta_p = params.copy()
-            params_delta_n = params.copy()
-            params_delta_p[idx_parm] = param + delta
-            params_delta_n[idx_parm] = param - delta
-
-            loss_delta_p = func_objective(params_delta_p, args_of_func_objective)
-            loss_delta_n = func_objective(params_delta_n, args_of_func_objective)
-            dl_of_dp = (loss_delta_p - loss_delta_n) / (2 * delta)
-            J[idx_parm] = dl_of_dp
-        return J
-
 if __name__ == "__main__":
     from core import FileIO
     from core import Visualizer 
@@ -606,7 +503,7 @@ if __name__ == "__main__":
     area2 = ellipse_std.cal_segment_area(
         [-3, -np.sqrt(7)/2], [4/np.sqrt(5), 4/np.sqrt(5)]
     )
-    cal_characteristic_polynomial_of_pencil_between_2ellipses(ellipse_src_rt, ellipse_obj_rt)0000000000000
+    cal_characteristic_polynomial_of_pencil_between_2ellipses(ellipse_src_rt, ellipse_obj_rt)
     cv2.namedWindow("", cv2.WINDOW_FREERATIO)
     cv2.imshow("", img)
     cv2.waitKey()
