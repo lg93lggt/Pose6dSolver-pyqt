@@ -5,6 +5,7 @@ from typing import Any, Dict, List, Sequence, Tuple
 
 import cv2
 import numpy as np
+import sympy as sp
 sys.path.append("..")
 from core import eps 
 from core import geometry as geo
@@ -30,7 +31,7 @@ class Ellipse2d(Conic.Conic2d):
                 shape:  3x3
         """
         if input_mat is None:
-            self.mat = np.zeros((3, 3))
+            self.mat = np.diag([1, 1, -1.0])
         else:
             if type(input_mat) is np.ndarray:
                 self._set_by_mat(input_mat=input_mat)
@@ -93,20 +94,32 @@ class Ellipse2d(Conic.Conic2d):
             [u, v] = point2d
             A[idx, :] = np.array([u ** 2, u * v, v ** 2, u, v, 1])
         A[-1, :] = np.array([0, 0, 0, 0, 0, 1])
-        x = np.zeros(6, )
-        x[-1] = 1
+        x = np.zeros(n_points + 1, )
+        x[-1] = -1
         vec = np.linalg.lstsq(a=A, b=x, rcond=-1)[0]
         mat = self.__vec_to_mat(vec)
         mat = eps.filter(mat)
         self._set_by_mat(mat)
         return self
 
-    def _set_by_vec(self, vec: np.ndarray) -> None:
-        mat = self.vector_to_mat(vec)
+    def _set_by_5props(self, radius_u: float=1, radius_v: float=1, u_center: float=0, v_center: float=0, theta: float=0) -> None:
+        S = np.diag([radius_u, radius_v, 1])
+        T = np.array([
+                [1, 0, u_center],
+                [0, 1, v_center],
+                [0, 0,        1]
+            ])
+        R = np.array([
+                [ np.cos(theta), np.sin(theta), 0],
+                [-np.sin(theta), np.cos(theta), 0],
+                [             0,             0, 1]
+            ])
+        H = T @ R @ S
+        mat = get_transformed_conic_mat(Ellipse2dStd().mat, H)
         self._set_by_mat(mat)
         return 
 
-    def _set_by_6pars(self, a: float, b: float, c: float, d: float, e: float, f: float) -> None:
+    def _set_by_6pars(self, a: float=1, b: float=0, c: float=1, d: float=0, e: float=0, f: float=-1) -> None:
         """
         ax^2 + bxy + cy^2 + dx + ey + f = 0
         """
@@ -166,13 +179,13 @@ class Ellipse2d(Conic.Conic2d):
         evec, R_ = np.linalg.eig(self.mat[:2, :2]) # R.I = R.T , orthogonality
         [d_, e_] = np.array([self.d, self.e]) @ R_
 
-        s0 = 0.5 * d_ / evec[0]
-        s1 = 0.5 * e_ / evec[1]
+        s0 = 0.5 * d_ / (evec[0] + eps.eps**2)
+        s1 = 0.5 * e_ / (evec[1] + eps.eps**2)
         k = evec[0] * (s0 ** 2) + evec[1] * (s1 ** 2) - self.f 
 
         self.point2d_center = np.array([-s0, -s1]) @ R_.T
-        self.radius_u = np.sqrt(np.abs(k / evec[0]))
-        self.radius_v = np.sqrt(np.abs(k / evec[1]))
+        self.radius_u = np.sqrt(np.abs(k / (evec[0] + eps.eps**2)))
+        self.radius_v = np.sqrt(np.abs(k / (evec[1] + eps.eps**2)))
 
         arc_c = np.arccos(R_[0, 0])
         arc_s = np.arcsin(R_[0, 1])
@@ -332,30 +345,15 @@ class Ellipse2dStd(Ellipse2d):
 
 
 def cal_characteristic_polynomial_of_pencil_between_2ellipses(ellipse_src, ellipse_dst):
-    [a1, b1, c1, d1, e1, f1] = [ellipse_src.a, ellipse_src.b, ellipse_src.c, ellipse_src.d, ellipse_src.e, ellipse_src.f]
-    [a2, b2, c2, d2, e2, f2] = [ellipse_dst.a, ellipse_dst.b, ellipse_dst.c, ellipse_dst.d, ellipse_dst.e, ellipse_dst.f]
-    
-    _d = a1*(c1*f1 - e1**2) - (c1 * d1**2 - 2*b1*d1*e1 + b1**2 * f1)
-    _a = ( \
-        a1*(c1*f2 - 2*e1*e2 + c2*f1) + \
-        2*b1*(d1*e2 - b2*f1 + d2*e1) + \
-        2*d1*(b2*e1 - c1*d2) - \
-        (b1**2 * f2 + c2 * d1**2 + a2 * e1**2) + \
-        (a2*c1*f1) \
-        ) / _d
-    _b = ( \
-        a1*(c2*f2 - e1**2) + \
-        2*b1*(d2*e2 - b2*f2) + \
-        2*d1*(b2*e2 - c2*d2) + \
-        c1*(a2*f2 - d2**2) + \
-        2*e1*(b2*d2 - a2*e2) + \
-        f1*(a2*c2 - b2**2) \
-    ) / _d
-    _c = (
-        a2*(c2*f2 - e2**2) - \
-        (b2**2 * f2 - 2*b2*d2*e2 + c2 * d2**2)
-    )
-    return [_a, _b, _c]
+    l = sp.symbols("l")
+    A = l * ellipse_src.mat
+    B = ellipse_dst.mat
+    polynomial = sp.det(sp.Matrix(A + B)).expand()
+    if polynomial.coeff(l**3) == 0:
+        raise ZeroDivisionError
+    polynomial /= polynomial.coeff(l**3)
+    [_, a, b, c] = sp.Poly(polynomial, l).coeffs()
+    return [1, float(a), float(b), float(c)]
 
 class RelativePositionOfTwoEllipses(enum.Enum):
     COINCIDENT                               = 0
@@ -370,61 +368,167 @@ class RelativePositionOfTwoEllipses(enum.Enum):
     TRANSVERSAL_AT_1_PT_AND_TANGENT_AT_1_PT  = 9
 
 def classify_relative_position_between_2ellipes(ellipse_src, ellipse_dst):
-    [_a, _b, _c] = cal_characteristic_polynomial_of_pencil_between_2ellipses(ellipse_src, ellipse_dst)
-    s4 = -27 * _c**3 + 18*_a*_b*_c + _a**2 * _b**2 - 4 * _a**3*_c - 4 * _b**3
-    s1 = _a
-    s2 = _a**2 - 3*_b
-    s3 = 3*_a*_c + _a**2 * _b - 4 * _b**2
-    if   s4 < 0: # case 2
-        return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_2_PTS
-    elif s4 > 0:
-        if (s1 > 0) and (s2 > 0) and (s3 > 0): # case 1, 4
-            _u =( -_a - np.sqrt(s2)) / 3
-            _v =( -_a + np.sqrt(s2)) / 3
-            _M = _u * ellipse_src.mat + ellipse_dst.mat
-            _N = _v * ellipse_src.mat + ellipse_dst.mat
-            if ( \
-                ((_M[1, 1] * np.linalg.det(_M) > 0) and (_M[0, 0] * np.linalg.det(_M[1:, 1:]) > 0)) or \
-                ((_N[1, 1] * np.linalg.det(_M) > 0) and (_N[0, 0] * np.linalg.det(_N[1:, 1:]) > 0))
-            ): # case 4
-                return RelativePositionOfTwoEllipses.CONTAINED
-            else: # case 1
-                return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_4_PTS
-        else: # case 3
-            return RelativePositionOfTwoEllipses.SEPARATED
-    else:
-        if (s1 > 0) and (s2 > 0) and (s3 < 0): # case 6
-            return RelativePositionOfTwoEllipses.EXTERNALLY_TANGENT_AT_1_PT
-        elif (s1 > 0) and (s2 > 0) and (s3 > 0): # case 4, 5, 7, 8
-            alpha = (4*_a*_b - _a**3 - 9*_c) / (s2) 
-            beta  = (9*_c - _a*_b) / (s2) 
-            _M = beta  * ellipse_src.mat + ellipse_dst.mat
-            _N = alpha * ellipse_src.mat + ellipse_dst.mat
-            if np.linalg.det(_M[:-1, :-1]) > 0:
-                if np.linalg.det(_N[:-1, :-1]) > 0: # case 5
-                    return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_2_PTS_AND_TANGENT_AT_1_PT
-                else: # case 7
-                    return RelativePositionOfTwoEllipses.INTERNALLY_TANGENT_AT_1_PT
-            elif (np.linalg.det(_M[1:, 1:]) + np.linalg.det(_M[[0, 2], [0, 2]]))> 0: # case 4
-                return RelativePositionOfTwoEllipses.CONTAINED
-            else: # case 8
-                return RelativePositionOfTwoEllipses.INTERNALLY_TANGENT_AT_2_PTS
-        else: # case 7, 9, 0
-            alpha = -_a / 3
-            _M = alpha * ellipse_src.mat + ellipse_dst.mat
-            if ( \
-                ((np.linalg.det(_M) != 0) and (np.linalg.det(_M[:-1, :-1]) <= 0)) or \
+    [_, a, b, c] = cal_characteristic_polynomial_of_pencil_between_2ellipses(ellipse_src, ellipse_dst)
+    
+    # solve: x^3 + _a*x^2 + _b*x^1 + _c = 0
+    roots = np.roots([1, a, b, c])
+    
+    # l = sp.symbols("l")
+    # poly = l**3 + a*l**2 + b*l + c
+    # roots = sp.solve()
+
+    real_roots = get_real_roots(roots)
+    n_real_roots = (np.abs(roots.imag) < eps.eps).sum()
+    n_imag_roots = 3 - n_real_roots
+
+    positive_real_roots = real_roots[np.where(real_roots > 0)]
+    negative_real_roots = real_roots[np.where(real_roots < 0)]
+
+    n_positive_real_roots = (real_roots > 0).sum()
+    n_negative_real_roots = n_real_roots - n_positive_real_roots 
+    
+    print("p_r:{}\tn_r:{}".format(positive_real_roots, negative_real_roots))
+    
+    if (n_positive_real_roots == 2) and (n_negative_real_roots == 1):
+        # When r1 < 0 < r2 < r3 ∈ R
+        # Two separated ellipses 
+        if np.abs(positive_real_roots[0] - positive_real_roots[1]) > eps.eps:
+            return RelativePositionOfTwoEllipses.SEPARATED # case 3
+        # When r1 < 0 < r2 = r3 ∈ R
+        # Two ellipses touching each other externally 
+        else: 
+            return RelativePositionOfTwoEllipses.EXTERNALLY_TANGENT_AT_1_PT # case 6
+    
+    # When r1 < 0 ∈ R, r2 ∈ C, r3 ∈ C
+    # Two ellipses transversal in 2 points 
+    elif (n_negative_real_roots == 1) and (n_imag_roots == 2):
+        return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_2_PTS # case 2
+
+    elif n_negative_real_roots == 3:
+        # When r1 = r2 = r3 < 0 ∈ R
+        if (np.abs(negative_real_roots[0] - negative_real_roots[1]) < eps.eps) and \
+                (np.abs(negative_real_roots[1] - negative_real_roots[2]) < eps.eps) and \
+                (np.abs(negative_real_roots[2] - negative_real_roots[0]) < eps.eps):
+            alpha = -a/3
+            pencil = alpha*ellipse_src.mat + ellipse_dst.mat
+            rank_pencil = np.rank(pencil)
+            if rank_pencil == 3:
+                return RelativePositionOfTwoEllipses.COINCIDENT # case 10
+            if rank_pencil == 2:
+                return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_1_PT_AND_TANGENT_AT_1_PT # case 9
+            if rank_pencil == 1:
+                return RelativePositionOfTwoEllipses.INTERNALLY_TANGENT_AT_1_PT # case 7
+        # When r1 < r2 < r3 < 0 ∈ R
+        elif (np.abs(negative_real_roots[0] - negative_real_roots[1]) > eps.eps) and \
+                (np.abs(negative_real_roots[1] - negative_real_roots[2]) > eps.eps) and \
+                (np.abs(negative_real_roots[2] - negative_real_roots[0]) > eps.eps):
+            # oringnal      polynomial: l^3 + a*l^2 +   b*l + c = 0
+            # derivative of polynomial:       3*l^2 + 2*a*l + b = 0
+            roots_deriv_polynomial = np.roots([3, 2*a, b])
+            u = np.min(roots_deriv_polynomial)
+            v = np.max(roots_deriv_polynomial)
+            M = u*ellipse_src.mat + ellipse_dst.mat
+            N = v*ellipse_src.mat + ellipse_dst.mat
+            
+            if ((M[1,1]*np.linalg.det(M) > 0) and (np.linalg.det(M[1:, 1:]))) or \
+                    ((N[1,1]*np.linalg.det(N) > 0) and (np.linalg.det(N[1:, 1:]))):
+                return RelativePositionOfTwoEllipses.CONTAINED # case 4
+            else:
+                return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_4_PTS # case 1
+        # When r1 < 0 ∈ R, r2 = r3 < 0 ∈ R, r1 != r2
+        if (\
+                ((np.abs(negative_real_roots[0] - negative_real_roots[1]) > eps.eps) and \
                 ( \
-                    (np.linalg.det(_M) != 0) and \
-                    (np.linalg.det(_M[:-1, :-1]) <= 0) and \
-                    ((np.linalg.det(_M) / (_M[0, 0] + _M[1, 1])) < 0)
-                )
-            ): # case 0
-                return RelativePositionOfTwoEllipses.COINCIDENT
-            elif ((np.linalg.det(_M) != 0) and (np.linalg.det(_M[:-1, :-1]) > 0)): # case 9
-                return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_1_PT_AND_TANGENT_AT_1_PT
-            else: # case 7
-                return RelativePositionOfTwoEllipses.INTERNALLY_TANGENT_AT_1_PT
+                    (np.abs(negative_real_roots[0] - negative_real_roots[2]) < eps.eps) or \
+                    (np.abs(negative_real_roots[1] - negative_real_roots[2]) < eps.eps)
+                )) or \
+                ((np.abs(negative_real_roots[1] - negative_real_roots[2]) > eps.eps) and \
+                ( \
+                    (np.abs(negative_real_roots[1] - negative_real_roots[0]) < eps.eps) or \
+                    (np.abs(negative_real_roots[2] - negative_real_roots[0]) < eps.eps)
+                )) or \
+                ((np.abs(negative_real_roots[2] - negative_real_roots[0]) > eps.eps) and \
+                ( \
+                    (np.abs(negative_real_roots[0] - negative_real_roots[1]) < eps.eps) or \
+                    (np.abs(negative_real_roots[2] - negative_real_roots[1]) < eps.eps)
+                ))
+            ):
+            alpha = (4*a*b - a**3 - 9*c) /   (a**2 - 3*b)
+            beta  = (9*c - a*b)          / 2*(a**2 - 3*b)
+            pencil_alpha = alpha * ellipse_src.mat + ellipse_dst.mat
+            pencil_beta  = beta  * ellipse_src.mat + ellipse_dst.mat
+            rank_pencil_alpha = np.linalg.matrix_rank(pencil_alpha)
+            rank_pencil_beta  = np.linalg.matrix_rank(pencil_beta)
+            if 2 == 3:
+                return RelativePositionOfTwoEllipses.CONTAINED # case 4
+            if (rank_pencil_alpha == 2) and (rank_pencil_beta == 2):
+                return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_1_PT_AND_TANGENT_AT_1_PT # case 5
+            if 2 == 1:
+                return RelativePositionOfTwoEllipses.INTERNALLY_TANGENT_AT_1_PT # case 7
+            if 2 == 1:
+                return RelativePositionOfTwoEllipses.INTERNALLY_TANGENT_AT_1_PT # case 8
+            
+    elif n_real_roots == 1:
+        pass
+    # s4 = -27 * _c**3 + \
+    #     18*_a*_b*_c + \
+    #     _a**2*_b**2 - \
+    #     4*(_a**3)*_c - \
+    #     4*(_b**3)
+
+    # s1 = _a
+    # s2 = _a**2 - 3*_b
+    # s3 = 3*_a*_c + _a**2 * _b - 4 * _b**2
+    # if   s4 < 0: # case 2
+    #     return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_2_PTS
+    # elif s4 > 0:
+    #     if (s1 > 0) and (s2 > 0) and (s3 > 0): # case 1, 4
+    #         _u =( -_a - np.sqrt(s2)) / 3
+    #         _v =( -_a + np.sqrt(s2)) / 3
+    #         _M = _u * ellipse_src.mat + ellipse_dst.mat
+    #         _N = _v * ellipse_src.mat + ellipse_dst.mat
+    #         if ( \
+    #             ((_M[1, 1] * np.linalg.det(_M) > 0) and (_M[0, 0] * np.linalg.det(_M[1:, 1:]) > 0)) or \
+    #             ((_N[1, 1] * np.linalg.det(_M) > 0) and (_N[0, 0] * np.linalg.det(_N[1:, 1:]) > 0))
+    #         ): # case 4
+    #             return RelativePositionOfTwoEllipses.CONTAINED
+    #         else: # case 1
+    #             return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_4_PTS
+    #     else: # case 3
+    #         return RelativePositionOfTwoEllipses.SEPARATED
+    # else:
+        # if (s1 > 0) and (s2 > 0) and (s3 < 0): # case 6
+        #     return RelativePositionOfTwoEllipses.EXTERNALLY_TANGENT_AT_1_PT
+        # elif (s1 > 0) and (s2 > 0) and (s3 > 0): # case 4, 5, 7, 8
+        #     alpha = (4*a*b - a**3 - 9*c) / (s2) 
+        #     beta  = (9*c - a*b) / (s2) 
+        #     _M = beta  * ellipse_src.mat + ellipse_dst.mat
+        #     _N = alpha * ellipse_src.mat + ellipse_dst.mat
+        #     if np.linalg.det(_M[:-1, :-1]) > 0:
+        #         if np.linalg.det(_N[:-1, :-1]) > 0: # case 5
+        #             return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_2_PTS_AND_TANGENT_AT_1_PT
+        #         else: # case 7
+        #             return RelativePositionOfTwoEllipses.INTERNALLY_TANGENT_AT_1_PT
+        #     elif (np.linalg.det(_M[1:, 1:]) + np.linalg.det(_M[[0, 2], [0, 2]]))> 0: # case 4
+        #         return RelativePositionOfTwoEllipses.CONTAINED
+        #     else: # case 8
+        # #         return RelativePositionOfTwoEllipses.INTERNALLY_TANGENT_AT_2_PTS
+        # # else: # case 7, 9, 0
+        #     alpha = -a / 3
+        #     _M = alpha * ellipse_src.mat + ellipse_dst.mat
+        #     if ( \
+        #                 ((np.linalg.det(_M) != 0) and (np.linalg.det(_M[:-1, :-1]) <= 0)) or \
+        #                 ( \
+        #                         (np.linalg.det(_M) != 0) and \
+        #                         (np.linalg.det(_M[:-1, :-1]) <= 0) and \
+        #                         ((np.linalg.det(_M) / (_M[0, 0] + _M[1, 1])) < 0)
+        #                     )
+        #             ): # case 0
+        #         return RelativePositionOfTwoEllipses.COINCIDENT
+        #     elif ((np.linalg.det(_M) != 0) and (np.linalg.det(_M[:-1, :-1]) > 0)): # case 9
+        #         return RelativePositionOfTwoEllipses.TRANSVERSAL_AT_1_PT_AND_TANGENT_AT_1_PT
+        #     else: # case 7
+        #         return RelativePositionOfTwoEllipses.INTERNALLY_TANGENT_AT_1_PT
 
 def get_tangent_line_of_conic(mat_conic, mat_point_tangent):
     mat_line = mat_conic @ mat_point_tangent
@@ -433,6 +537,7 @@ def get_tangent_line_of_conic(mat_conic, mat_point_tangent):
 def get_transformed_conic_mat(mat_conic, mat_homography):
     """
     x.T * C * x = 0 transform by homography ->
+    (H * x2).T * C * (H * x2)
     x2.T * H.T.I * C * H.I * x2 = 0 ->
     x2.T * C2 * x2 = 0
     """
@@ -450,6 +555,12 @@ def get_homography_mat_from_2conics(conic_source, conic_target):
     H =  H1 @ np.linalg.inv(H0)
     return H
 
+def get_real_roots(roots: np.ndarray or List[np.complex64 or np.complex128]):
+    real_roots = roots[np.where(np.abs(roots.imag) < eps.eps)]
+    # imag_roots = roots[np.where(np.abs(roots.real) < eps.eps)]
+    return real_roots.real
+
+
 if __name__ == "__main__":
     from core import FileIO
     from core import Visualizer 
@@ -458,16 +569,39 @@ if __name__ == "__main__":
     fio = FileIO.FileIO()
     fio.load_project_from_filedir("../../姿态测量")
 
+    img = np.zeros((800, 1280, 3), np.uint8)
+    edges = cv2.Canny(img, 50, 500)
+    img = cv2.cvtColor(edges, cv2.COLOR_GRAY2BGR)
+    # cnt = cv2.findContours(edges, cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+    # for i in range(len(cnt[1])):
+    #     cv2.drawContours(img, cnt[1], i, (0,0,255))
+
     cam = fio.load_camera_pars(0)
-    mat_proj = cam["intrin"] @ cam["extrin"]
+    mat_proj = np.array([
+        [-6.65331302e-01, -3.96516135e-02,  1.60672702e-01, -2.21357715e-01],
+        [ 5.77521005e-02, -6.73878897e-01,  1.25742212e-01, -8.76790878e-02],
+        [-1.18982088e-04, -9.53190398e-05, -2.70041496e-04, -3.97555260e-04],
+        [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
 
-    p2d_obj = fio.load_points2d("solve", 0, 0, 0)
+    p2d_obj = np.array([
+        [282, 264],
+        [690, 659],
+        [613, 757],
+        [624, 675],
+        [675, 742],
+        [703, 673],
+        [657, 657]])
 
-    p3d_src = fio.loadz_points3d("solve", 0, 0, 0)["array"]
-    p2d_src = geo.project_points3d_to_2d(np.array([0., 0, 0, 0.01, -0.02, 0]), mat_proj, p3d_src)
-
-    img = fio.load_image_raw("solve", 0, 0)
-
+    p3d_src = np.array([
+        [ 0.     ,  0.     ,  0.     ],
+        [ 0.7    ,  0.02828,  0.03182],
+        [ 0.7    , -0.02828, -0.03182],
+        [ 0.7    ,  0.02828, -0.03182],
+        [ 0.7    , -0.02828,  0.03182],
+        [ 0.7    ,  0.04257,  0.     ]])
+    p2d_src = geo.project_points3d_to_2d(np.array([0., 0, 0, -0.7, 0.2, -0.2]), mat_proj, p3d_src)
+    vis.draw_axis3d(img, cam)
+    vis.draw_points2d(img, p2d_obj)
 
     ellipse_obj = Ellipse2d()
     ellipse_obj._set_by_5points2d(p2d_obj[1:])
@@ -481,32 +615,37 @@ if __name__ == "__main__":
     T_obj = np.eye(3)
     T_obj[:2, -1] = -ellipse_obj.point2d_center
     R_obj = geo.rotation2d(-ellipse_obj.theta_rad)
+    S_obj = np.diag([1/ellipse_obj.radius_u, 1/ellipse_obj.radius_v, 1])
     ellipse_obj_rt = ellipse_obj.get_transformed_conic(R_obj @ T_obj)
     ellipse_src_rt = ellipse_src.get_transformed_conic(R_obj @ T_obj)
 
-    ellipse_std = Ellipse2dStd(np.array([1/(4**2), 1/(2**2)]))
 
-    ellipse_obj_rt.transform_by_homography_mat(np.array([[1,0,320.],[0,1,240],[0,0,1]]))
-    ellipse_src_rt.transform_by_homography_mat(np.array([[1,0,320.],[0,1,240],[0,0,1]]))
+    ellipse_obj_rt.transform_by_homography_mat(np.array([[1, 0, img.shape[1] // 2],[0, 1, img.shape[0] // 2],[0, 0, 1]]))
+    ellipse_src_rt.transform_by_homography_mat(np.array([[1, 0, img.shape[1] // 2],[0, 1, img.shape[0] // 2],[0, 0, 1]]))
     # ellipse_std.transform_by_homography_mat(np.array([[1,0,320.],[0,1,240],[0,0,1]]))
 
     ellipse_src.draw(img, color=(0, 0, 255), thickness=1)
     ellipse_obj.draw(img, color=(0, 255, 0), thickness=1)
     ellipse_obj_rt.draw(img, color=(0, 255, 255), thickness=1)
     ellipse_src_rt.draw(img, color=(255, 0, 255), thickness=1)
-    ellipse_std.draw(img, color=(255, 255, 255), thickness=1)
+    
 
-    area1 = ellipse_std.cal_segment_area(
-        [4/np.sqrt(5), 4/np.sqrt(5)], [-3, -np.sqrt(7)/2]
-    )
+    #ellipse_src_rt.radius_u, ellipse_src_rt.radius_v, ellipse_src_rt.point2d_center[0], ellipse_src_rt.point2d_center[1], ellipse_src_rt.theta_rad)
+    #ellipse_std.draw(img, color=(255, 255, 255), thickness=1)
 
-    area2 = ellipse_std.cal_segment_area(
-        [-3, -np.sqrt(7)/2], [4/np.sqrt(5), 4/np.sqrt(5)]
-    )
-    cal_characteristic_polynomial_of_pencil_between_2ellipses(ellipse_src_rt, ellipse_obj_rt)
-    cv2.namedWindow("", cv2.WINDOW_FREERATIO)
-    cv2.imshow("", img)
-    cv2.waitKey()
+    
+    relation = classify_relative_position_between_2ellipes(ellipse_obj_rt, ellipse_src_rt)
+
+    #e1  = Ellipse2d()._set_by_6pars(3, 2, 0, 0)
+    e2  = Ellipse2d()
+    print(relation.name, relation.value)
+   
+    import matplotlib.pyplot as plt
+    plt.imshow(img)
+    plt.show()
+    #cv2.namedWindow("", cv2.WINDOW_FREERATIO)
+    # cv2.imshow("", img)
+    # cv2.waitKey()
     print()
             
 
