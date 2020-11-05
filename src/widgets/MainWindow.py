@@ -297,6 +297,17 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
                         print(sub_table_widget.objectName(), "加载已选3d点索引:", indexes_chosen)
             sub_dock_widget.points2d_objs = points2d_objs
             sub_dock_widget._update_table_widget_show_points()
+            if mode == "solve":
+                self.visualize_area.poses = []
+                for i_obj in range(n_objs):
+                    rtvec = self.fio.load_theta(self.i_scene, i_obj)
+                    if not (rtvec is None):
+                        pose = geometry.t_to_T(rtvec[3:]) @ geometry.r_to_R(rtvec[:3])
+                        self.visualize_area.poses.append(pose)
+                        #self.functional_area.get_sub_tab_widget(i_obj).set_rtvec(rtvec)
+                    else:
+                        self.visualize_area.poses.append(np.eye(4))
+                        #self.functional_area.get_sub_tab_widget(i_obj).set_rtvec(np.zeros(6))
         #self.findChild(DockGraphWidget.DockGraphWidget, "cam_2").findChild(TableWidget.ObjectTableWidget, "obj_1").array
         return
 
@@ -364,15 +375,14 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
 
                 if is_data_ready:
                     if i_obj == 0:
-                        self.solver = SolverPoses6d.SolverPoses6dConic("Adam", n_iters=10000, alpha=0.001, beta1=0.9, beta2=0.99)
+                        self.solver = SolverPoses6d.SolverPoses6dConic("Adam", n_iters=100, alpha=0.001, beta1=0.9, beta2=0.99)
                     else: # TODO
                         #self.solver = SolverPoses6d.SolverPoses6d("LM", n_iters=1000, alpha=0.01) 
-                        self.solver = SolverPoses6d.SolverPoses6d("Adam", n_iters=10000, alpha=0.001, beta1=0.9, beta2=0.99) 
+                        self.solver = SolverPoses6d.SolverPoses6d("Adam", n_iters=1000, alpha=0.001, beta1=0.9, beta2=0.99) 
                     self.solver.set_cameras_pars(cameras_pars)
                     self.solver.set_points2d_of_n_cams(points2d_n_cams)    
                     self.solver.set_points3d(points3d_n_cams[0])
                     theta0 = self.functional_area.get_theta0(self.fio.index2name("obj", i_obj))
-                    theta0 = geometry.rtvec_degree2rad(theta0)
                     print("theta0:", theta0)
                     log   = self.solver.run(theta0)
                     theta = self.solver.opt.theta
@@ -380,7 +390,7 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
                     theta = geometry.rtvec_rad2degree(theta)
 
                     self.fio.save_log(self.mode, self.i_scene, i_obj, log)
-                    self.fio.save_theta(self.mode, self.i_scene, i_obj, theta)
+                    self.fio.save_theta(i_obj, self.i_scene, theta)
                     self.sig_solve_successed.connect(self.visualize_area.slot_accept_solve_result)
                     self.sig_solve_successed.connect(self.functional_area.slot_accept_solve_result)
                     self.sig_solve_successed.emit(i_obj, theta, cameras_pars)

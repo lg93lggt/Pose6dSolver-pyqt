@@ -25,6 +25,14 @@ def save_numpy_txt(pth: str, array: np.ndarray) -> None:
     np.savetxt(pth, array)
     print("\n保存至:\t{}".format(pth))
     return
+    
+def load_numpy_txt(pth: str) -> np.ndarray:
+    if not os.path.exists(pth):
+        print("文件不存在: ", pth)
+        return
+    else:
+        print("加载: ", pth)
+        return np.loadtxt(pth)
 
 def savez_numpy_txt(pth: str, array: np.ndarray, indexes: np.ndarray) -> None:
     [dir_file, _, suffix] = split_path(pth)
@@ -363,7 +371,7 @@ class FileIO(object):
         """
             加载模型文件夹
         """
-        suffixes_obj      = [".stl"] # 可选后缀
+        suffixes_obj      = [".stl", ".STL"] # 可选后缀
         pths_input_models = []
         for suffix_obj in suffixes_obj:
             pth_obj = os.path.join(dir_motherfolder, "*" + suffix_obj)
@@ -605,20 +613,33 @@ class FileIO(object):
         print("记录保存:\t", pth)
         return
 
-    def save_theta(self, mode: str,  scene: str or int, obj: str or int,  theta: np.ndarray):
+    def save_theta(self, obj: str or int, scene: str or int, theta: np.ndarray):
         if isinstance(scene, int):
             scene = self.index2name("scene", scene)
         if isinstance(obj, int):
             obj = self.index2name("obj", obj)
         pth = os.path.join(
             self.struct.dir_root, 
-            "results_" + mode,
+            "results_solve",
             obj,
             scene + ".txt"
         )
         save_numpy_txt(pth, theta)
         print("姿态保存:\t", pth)
         return
+
+    def load_theta(self, scene: str or int, obj: str or int) -> np.ndarray:
+        if isinstance(scene, int):
+            scene = self.index2name("scene", scene)
+        if isinstance(obj, int):
+            obj = self.index2name("obj", obj)
+        pth = os.path.join(
+            self.struct.dir_root, 
+            "results_solve",
+            obj,
+            scene + ".txt"
+        )
+        return load_numpy_txt(pth)
 
     def load_model(self, mode: str, obj: str or int):
         if isinstance(obj, str): 
@@ -634,8 +655,6 @@ class FileIO(object):
         else:
             print("加载:", pth)
             return  load_model_from_stl_binary(pth)
-
-
 
 def t():
     fio = FileIO()

@@ -89,9 +89,8 @@ class ManualPoseWidget(QWidget, Ui_ManualPoseWidget.Ui_Form):
         except :
             print("rtvec 不正确")
 
-
-    @pyqtSlot()
-    def on_lineRx_editingFinished(self):
+    @pyqtSlot(float)
+    def on_lineRx_valueChanged(self):
         rtvec = self.get_rtvec()
         name_obj = self.objectName()
         self.sig_rtvec_changed.emit(name_obj, rtvec)
@@ -100,8 +99,14 @@ class ManualPoseWidget(QWidget, Ui_ManualPoseWidget.Ui_Form):
             print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_rtvec_changed.signal))
         pass
 
-    @pyqtSlot()
-    def on_lineRy_editingFinished(self):
+    #@pyqtSlot()
+    # def on_lineRx_valueChanged(self):
+    #     print("121")
+    #     self.on_lineRx_editingFinished()
+    #     return
+
+    @pyqtSlot(float)
+    def on_lineRy_valueChanged(self):
         rtvec = self.get_rtvec()
         name_obj = self.objectName()
         self.sig_rtvec_changed.emit(name_obj, rtvec)
@@ -110,8 +115,8 @@ class ManualPoseWidget(QWidget, Ui_ManualPoseWidget.Ui_Form):
             print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_rtvec_changed.signal))
         pass
 
-    @pyqtSlot()
-    def on_lineRz_editingFinished(self):
+    @pyqtSlot(float)
+    def on_lineRz_valueChanged(self):
         rtvec = self.get_rtvec()
         name_obj = self.objectName()
         self.sig_rtvec_changed.emit(name_obj, rtvec)
@@ -120,7 +125,8 @@ class ManualPoseWidget(QWidget, Ui_ManualPoseWidget.Ui_Form):
             print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_rtvec_changed.signal))
         pass
     
-    def on_lineTx_editingFinished(self):
+    @pyqtSlot(float)
+    def on_lineTx_valueChanged(self):
         rtvec = self.get_rtvec()
         name_obj = self.objectName()
         self.sig_rtvec_changed.emit(name_obj, rtvec)
@@ -129,8 +135,8 @@ class ManualPoseWidget(QWidget, Ui_ManualPoseWidget.Ui_Form):
             print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_rtvec_changed.signal))
         pass
 
-    @pyqtSlot()
-    def on_lineTy_editingFinished(self):
+    @pyqtSlot(float)
+    def on_lineTy_valueChanged(self):
         rtvec = self.get_rtvec()
         name_obj = self.objectName()
         self.sig_rtvec_changed.emit(name_obj, rtvec)
@@ -139,8 +145,8 @@ class ManualPoseWidget(QWidget, Ui_ManualPoseWidget.Ui_Form):
             print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_rtvec_changed.signal))
         pass
 
-    @pyqtSlot()
-    def on_lineTz_editingFinished(self):
+    @pyqtSlot(float)
+    def on_lineTz_valueChanged(self):
         rtvec = self.get_rtvec()
         name_obj = self.objectName()
         self.sig_rtvec_changed.emit(name_obj, rtvec)

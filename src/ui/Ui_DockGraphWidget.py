@@ -15,7 +15,7 @@ class Ui_Form(object):
         self.gridLayout = QtWidgets.QGridLayout(Form)
         self.gridLayout.setObjectName("gridLayout")
         self.dockGraphWidget = QtWidgets.QDockWidget(Form)
-        self.dockGraphWidget.setAcceptDrops(False)
+        self.dockGraphWidget.setAcceptDrops(True)
         self.dockGraphWidget.setFloating(False)
         self.dockGraphWidget.setFeatures(QtWidgets.QDockWidget.DockWidgetFloatable|QtWidgets.QDockWidget.DockWidgetMovable)
         self.dockGraphWidget.setObjectName("dockGraphWidget")

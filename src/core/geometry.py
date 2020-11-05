@@ -27,6 +27,17 @@ def t_to_T(tvec: np.ndarray)-> np.ndarray:
     T[:3, 3] = tvec
     return T
 
+def RT_to_rt(RT: np.ndarray) -> np.ndarray:
+    rtvec = np.zeros(6)
+    R = np.eye(4)
+    R[:3, :3] = RT[:3, :3]
+    T = np.eye(4)
+    T[:3,  3] = RT[:3,  3]
+    rtvec[:3] = R_to_r(R)
+    rtvec[3:] = T_to_t(T)
+    return rtvec
+
+
 def rtvec_degree2rad(rtvec_degree: np.ndarray) -> np.ndarray:
     rtvec_rad = rtvec_degree.copy()
     rtvec_rad[:3] = np.pi * (rtvec_rad[:3] / 180)
@@ -84,7 +95,47 @@ def solve_projection_mat_3d_to_2d(points3d: np.ndarray, points2d: np.ndarray, me
     else:
         raise TypeError
 
-def decomposition_intrin_extrin_from_projection_mat(mat_projection: np.ndarray):
+def decompose_projection_mat(mat_projection: np.ndarray):
+    M_ = mat_projection
+    m34 = 1 / np.linalg.norm(M_[2, :3])
+    M = M_ * m34
+    
+    m1 = M[0, :3]
+    m2 = M[1, :3]
+    m3 = M[2, :3]
+
+
+    fx = np.linalg.norm(np.cross(m1, m3))
+    fy = np.linalg.norm(np.cross(m2, m3))
+
+    cx = np.dot(m1, m3)
+    cy = np.dot(m2, m3)
+
+    r1 = (m1 - cx*m3) / fx
+    r2 = (m2 - cy*m3) / fy
+    r3 = m3
+
+    t1 = (M[0, 3] - cx*M[2, 3]) / fx
+    t2 = (M[1, 3] - cy*M[2, 3]) / fy
+    t3 = M[2, 3]
+
+    mat_intrin = np.array([
+            [fx,  0, cx, 0],
+            [ 0, fy, cy, 0], 
+            [ 0,  0,  1, 0],
+            [ 0,  0,  0, 1]
+        ])
+    mat_extrin = np.eye(4)
+    mat_extrin[0, :3] = r1
+    mat_extrin[1, :3] = r2
+    mat_extrin[2, :3] = r3
+    mat_extrin[0,  3] = t1
+    mat_extrin[1,  3] = t2
+    mat_extrin[2,  3] = t3
+
+    return [mat_intrin, mat_extrin]
+
+def decompose_projection_mat_by_rq(mat_projection: np.ndarray):
     M = mat_projection
 
     mat_intrin = np.eye(4)

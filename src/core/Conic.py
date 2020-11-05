@@ -92,7 +92,6 @@ class Conic2d(object):
         x[-1] = 1
         vec = np.linalg.lstsq(a=A, b=x, rcond=-1)[0]
         mat = self.__vec_to_mat(vec)
-        mat = eps.filter(mat)
         self._set_by_mat(mat)
         return self
 

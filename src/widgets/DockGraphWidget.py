@@ -12,7 +12,7 @@ from PyQt5.QtWidgets import *
 
 sys.path.append("..")
 from ui import *
-from core import Visualizer, FileIO, geometry
+from core import Visualizer, FileIO, geometry, Conic
 from widgets import TableWidget
 
 
@@ -27,7 +27,6 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
         self.setupUi(self)
         self.debug = parent.debug if parent else True
         self.img_raw  = np.array([[]])
-        self.vis = Visualizer.Visualizer()
         
         self.n_objs = 0
         self.points2d_objs = {}
@@ -35,6 +34,7 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
 
         # 创建绘图场景
         self.scene = QGraphicsScene()  
+        self.scale  = 1
 
         # 定义事件
         self.graphics_view.mouseMoveEvent        = self.event_mouse_move
@@ -201,11 +201,11 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
             print(self.objectName(), i_cam, "\n", camera_pars["intrin"])
             self.camera_pars = camera_pars
             self.img_show = self.img_raw.copy()
-            self.vis.draw_axis3d(self.img_show, self.camera_pars)
+            Visualizer.draw_axis3d(self.img_show, self.camera_pars)
             for [name_obj, points2d] in self.points2d_objs.items():
-                self.vis.draw_points2d(self.img_show, points2d, 10)
+                Visualizer.draw_points2d(self.img_show, points2d, 10)
                 sub_tabel_widget = self.get_sub_table_view(name_obj)
-                self.vis.draw_points3d(self.img_show, sub_tabel_widget.array, np.zeros(6), self.camera_pars)
+                Visualizer.draw_points3d(self.img_show, sub_tabel_widget.array, np.zeros(6), self.camera_pars)
             self._update_img()
         return
 
@@ -214,32 +214,42 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
             self.camera_pars = camera_pars
             self.img_show = self.img_raw.copy()
             points2d = self.points2d_objs["obj_{:d}".format(i_obj + 1)]
-            self.vis.draw_points2d(self.img_show, points2d, 1)
+            Visualizer.draw_points2d(self.img_show, points2d, 1)
             sub_tabel_widget = self.get_sub_table_view(i_obj)
             points3d =  sub_tabel_widget.array
-            self.vis.draw_axis3d(self.img_show, self.camera_pars)
-            self.vis.draw_backbone3d(self.img_show, points3d, theta, self.camera_pars)
-            self.vis.draw_points3d_with_texts(self.img_show, points3d, theta, self.camera_pars)
-            # self.vis.draw_model3d(self.img_show, model, theta, self.camera_pars)
+            Visualizer.draw_axis3d(self.img_show, self.camera_pars)
+            Visualizer.draw_backbone3d(self.img_show, points3d, theta, self.camera_pars)
+            Visualizer.draw_points3d_with_texts(self.img_show, points3d, theta, self.camera_pars)
+            # Visualizer.draw_model3d(self.img_show, model, theta, self.camera_pars)
             self._update_img()
         return
         
     def slot_draw_theta0(self, name_obj: str, i_cam: int, theta: np.ndarray):
-        theta = geometry.rtvec_degree2rad(theta)
+        # theta = geometry.rtvec_degree2rad(theta)
         print("draw :", theta)
         if self.objectName() == "cam_{:d}".format(i_cam + 1):
             self.img_show = self.img_raw.copy()
             
             sub_tabel_widget = self.get_sub_table_view(name_obj)
-            points3d =  sub_tabel_widget.array
-            self.vis.draw_points3d_with_texts(self.img_show, points3d, theta, self.camera_pars)
-            self.vis.draw_backbone3d(self.img_show, points3d, theta, self.camera_pars)
-            self.vis.draw_axis3d(self.img_show, self.camera_pars)
+            points3d =  self.window().fio.load_points3d(self.mode, name_obj)
+            if self.window().functional_area.rbtn_axis.isChecked():
+                Visualizer.draw_axis3d(self.img_show, self.camera_pars, unit_length=1.0, width_line=3)
+                Visualizer.draw_axis3d(self.img_show, self.camera_pars, theta)
+            if self.window().functional_area.rbtn_model.isChecked():
+                Visualizer.draw_model3d(self.img_show, self.window().fio.load_model("solve", name_obj), theta, self.camera_pars)
+            if self.window().functional_area.rbtn_backbone.isChecked():
+                Visualizer.draw_backbone3d(self.img_show, points3d, theta, self.camera_pars)
+            if self.window().functional_area.rbtn_points2d.isChecked():
+                if name_obj in self.points2d_objs.keys():
+                    points2d = self.points2d_objs[name_obj]
+                    Visualizer.draw_points2d_with_texts(self.img_show, points2d)
+            if self.window().functional_area.rbtn_points3d.isChecked():
+                Visualizer.draw_points3d_with_texts(self.img_show, points3d, theta, self.camera_pars)
             # 先不画模型
             # if self.parent().parent().parent().parent():
             #     main = self.parent().parent().parent().parent()
             #     for i_model in range(main.fio.struct.solve.n_models):
-            #         self.vis.draw_model3d(self.img_show, main.fio.load_model("solve", name_obj), theta, self.camera_pars)
+            #         Visualizer.draw_model3d(self.img_show, main.fio.load_model("solve", name_obj), theta, self.camera_pars)
             self._update_img()
         return
 
@@ -275,8 +285,8 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
                 
             elif evt.angleDelta().y() < 0: # 缩小图片
                 self.scale -= self.dscale
-                if self.scale < 1:
-                    self.scale = 1
+                if self.scale < 0.5:
+                    self.scale = 0.5
                 self._update_img()
             return
 
@@ -332,12 +342,56 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
                     self.get_sub_table_view(name_obj).indexes_chosen
                 )
                 print("物体{}:\t".format(name_obj, self.points2d_objs[name_obj]))
+            if self.mode=="solve" and i_obj== 0:
+                if name_obj in self.points2d_objs.keys():
+                    if len(self.points2d_objs[name_obj]) >= 5:
+                        ellipse = Conic.Conic2d()
+                        ellipse._set_by_5points2d(np.array(self.points2d_objs[name_obj])[1:])
+                        self.img_show = self.img_raw.copy()
+                        ellipse.draw(self.img_show)
+                else:
+                    print("点数不正确!{}/{}".format(n_points_tmp, n_points_obj))
+                self._update_img()
                 
                 if self.debug:
                     print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_choose_points2d_successed.signal))
             else:
                 print("点数不正确!{}/{}".format(n_points_tmp, n_points_obj))
-        self._update_table_widget_show_points()
+            self._update_table_widget_show_points()
+
+        elif evt.text() in [item for item in "qweasdtyughj"]:
+            i_obj = self.window().functional_area.tab_widget_objs.currentIndex()
+            tmp = self.window().visualize_area.poses[i_obj]
+            step_r = np.pi / 180
+            if evt.text() == "q":
+                self.window().visualize_area.poses[i_obj] = tmp @ geometry.r_to_R(np.array([ step_r, 0, 0]))
+            if evt.text() == "a":
+                self.window().visualize_area.poses[i_obj] = tmp @ geometry.r_to_R(np.array([-step_r, 0, 0]))
+            if evt.text() == "w":
+                self.window().visualize_area.poses[i_obj] = tmp @ geometry.r_to_R(np.array([0,  step_r, 0]))
+            if evt.text() == "s":
+                self.window().visualize_area.poses[i_obj] = tmp @ geometry.r_to_R(np.array([0, -step_r, 0]))
+            if evt.text() == "e":
+                self.window().visualize_area.poses[i_obj] = tmp @ geometry.r_to_R(np.array([0, 0,  step_r]))
+            if evt.text() == "d":
+                self.window().visualize_area.poses[i_obj] = tmp @ geometry.r_to_R(np.array([0, 0, -step_r]))
+
+            step_t = 0.005
+            if evt.text() == "t":
+                self.window().visualize_area.poses[i_obj] = tmp @ geometry.t_to_T(np.array([ step_t, 0, 0]))
+            if evt.text() == "g":
+                self.window().visualize_area.poses[i_obj] = tmp @ geometry.t_to_T(np.array([-step_t, 0, 0]))
+            if evt.text() == "y":
+                self.window().visualize_area.poses[i_obj] = tmp @ geometry.t_to_T(np.array([0,  step_t, 0]))
+            if evt.text() == "h":
+                self.window().visualize_area.poses[i_obj] = tmp @ geometry.t_to_T(np.array([0, -step_t, 0]))
+            if evt.text() == "u":
+                self.window().visualize_area.poses[i_obj] = tmp @ geometry.t_to_T(np.array([0, 0,  step_t]))
+            if evt.text() == "j":
+                self.window().visualize_area.poses[i_obj] = tmp @ geometry.t_to_T(np.array([0, 0, -step_t]))
+            rtvec = geometry.RT_to_rt(self.window().visualize_area.poses[i_obj])
+            self.window().functional_area.tab_widget_objs.setCurrentIndex(i_obj)
+            self.window().functional_area.get_sub_tab_widget(i_obj).set_rtvec(rtvec)
         return
 
 

@@ -16,46 +16,9 @@ class CalibratorByDLT(object):
     def __init__(self, n_points=8, unit_length_meter=1) -> None:
         self.unit_length_meter = unit_length_meter
         self.n_points = n_points
-        if   self.n_points == 8:
-            self.points3d_unit_cube = np.array(
-                [[0, 0, 0],
-                 [1, 0, 0],
-                 [1, 1, 0],
-                 [0, 1, 0],
-                 [0, 0, 1],
-                 [1, 0, 1],
-                 [1, 1, 1],
-                 [0, 1, 1]],
-                dtype=np.float
-            )
-        elif self.n_points == 7:
-            self.points3d_unit_cube = np.array(
-                [[0, 0, 0],
-                 [1, 0, 0],
-                 [1, 1, 0],
-                #[0, 1, 0],
-                 [0, 0, 1],
-                 [1, 0, 1],
-                 [1, 1, 1],
-                 [0, 1, 1]],
-                dtype=np.float
-            )
-        elif self.n_points == 6:
-            self.points3d_unit_cube = np.array(
-                [[0, 0, 0],
-                 [1, 0, 0],
-                #[1, 1, 0],
-                #[0, 1, 0],
-                 [0, 0, 1],
-                 [1, 0, 1],
-                 [1, 1, 1],
-                 [0, 1, 1]],
-                dtype=np.float
-            )
-        self.points3d_real = self.points3d_unit_cube * self.unit_length_meter
-        
         self.solve_perspective_mat_3d_to_2d = geo.solve_projection_mat_3d_to_2d
-        self.decomposition_intrin_extrin_from_projection_mat = geo.decomposition_intrin_extrin_from_projection_mat
+        # RQ decompose or normal
+        self.decompose_intrin_extrin_from_projection_mat = geo.decompose_projection_mat
         self.R2r = geo.R_to_r
         self.T2t = geo.T_to_t
         return
@@ -69,9 +32,8 @@ class CalibratorByDLT(object):
         return
     
     def solve(self):
-        M = self.solve_perspective_mat_3d_to_2d(self.points3d_real, self.points2d_obj)
-
-        [mat_intrin, mat_extrin] = self.decomposition_intrin_extrin_from_projection_mat(M)
+        M = self.solve_perspective_mat_3d_to_2d(self.points3d_real, self.points2d_obj, method="ols")
+        [mat_intrin, mat_extrin] = self.decompose_intrin_extrin_from_projection_mat(M)
  
         rvec = self.R2r(mat_extrin)
         tvec = self.T2t(mat_extrin)

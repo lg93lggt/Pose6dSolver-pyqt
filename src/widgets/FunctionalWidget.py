@@ -8,6 +8,7 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui     import *
 from PyQt5.QtCore    import *
 import numpy as np
+from core.Visualizer import Visualizer
 
 sys.path.append("..")
 from ui import * 
@@ -29,7 +30,11 @@ class FunctionalWidget(QWidget, Ui_FunctionalWidget.Ui_Form):
         self.setObjectName("func")
 
         self.tab_widget_objs.setObjectName("tabWidgetObjs")
+        self.tab_widget_objs.removeTab(1)
+        self.tab_widget_objs.removeTab(0)
         self.init_sub_tab_widgets(1)
+
+        self.rbtn_model.setChecked(False)
 
         # 重定向print()
         if self.debug:
@@ -52,7 +57,7 @@ class FunctionalWidget(QWidget, Ui_FunctionalWidget.Ui_Form):
         self.text_edit_outprint.ensureCursorVisible()   
 
     def init_sub_tab_widgets(self, n_objs=1):
-        #self.tab_widget_objs.clear()
+        self.n_objs = n_objs
         for i_obj in range(n_objs):
             if self.get_sub_tab_widget(i_obj) is not None:
                 continue
@@ -65,7 +70,7 @@ class FunctionalWidget(QWidget, Ui_FunctionalWidget.Ui_Form):
             sub_maul_widget.setObjectName(name_obj)
             sub_maul_widget.sig_rtvec_changed.connect(self.slot_send_rtvec_msg)
 
-            layout_tab = QVBoxLayout()
+            layout_tab = QHBoxLayout()
             sub_tab.setLayout(layout_tab)
             layout_tab.addWidget(sub_maul_widget)
         #self.show()
@@ -99,13 +104,24 @@ class FunctionalWidget(QWidget, Ui_FunctionalWidget.Ui_Form):
     def slot_accept_solve_result(self, name_obj: str, rtvec: np.ndarray):
         sub_tab_widget = self.get_sub_tab_widget(name_obj)
         sub_tab_widget.set_rtvec(rtvec)
-        self.tab_widget_objs.setCurrentIndex(name_obj)#int(name_obj.split("_")[1]))
+        #self.tab_widget_objs.setCurrentIndex(int(name_obj.split("_")[1]) - 1)#
         return
 
     @pyqtSlot()
     def on_btn_run_clicked(self):
         print("开始解算:")
         self.sig_btn_run_clicked.emit()
+
+        if self.debug:
+            print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_btn_run_clicked.signal))
+        pass
+
+    @pyqtSlot()
+    def on_btn_save_clicked(self):
+        print("保存:")
+        for i_obj in range(self.n_objs):
+            rtvec = self.get_sub_tab_widget(i_obj).get_rtvec()
+            self.window().fio.save_theta(i_obj, self.window().i_scene, rtvec)
 
         if self.debug:
             print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_btn_run_clicked.signal))

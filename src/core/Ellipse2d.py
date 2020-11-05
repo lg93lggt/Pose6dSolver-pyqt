@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Sequence, Tuple
 
 import cv2
 import numpy as np
-import sympy as sp
+#import sympy as sp
 sys.path.append("..")
 from core import eps 
 from core import geometry as geo
@@ -98,7 +98,6 @@ class Ellipse2d(Conic.Conic2d):
         x[-1] = -1
         vec = np.linalg.lstsq(a=A, b=x, rcond=-1)[0]
         mat = self.__vec_to_mat(vec)
-        mat = eps.filter(mat)
         self._set_by_mat(mat)
         return self
 
@@ -565,7 +564,6 @@ if __name__ == "__main__":
     from core import FileIO
     from core import Visualizer 
     
-    vis = Visualizer.Visualizer()
     fio = FileIO.FileIO()
     fio.load_project_from_filedir("../../姿态测量")
 
@@ -577,13 +575,46 @@ if __name__ == "__main__":
     #     cv2.drawContours(img, cnt[1], i, (0,0,255))
 
     cam = fio.load_camera_pars(0)
-    mat_proj = np.array([
-        [-6.65331302e-01, -3.96516135e-02,  1.60672702e-01, -2.21357715e-01],
-        [ 5.77521005e-02, -6.73878897e-01,  1.25742212e-01, -8.76790878e-02],
-        [-1.18982088e-04, -9.53190398e-05, -2.70041496e-04, -3.97555260e-04],
-        [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00,  1.00000000e+00]])
+    intrin1 = np.array([
+        [ 5.72858664e-01, -6.19410059e-03,  3.31802346e-01, 0.00000000e+00],
+        [ 0.00000000e+00,  6.37328119e-01,  4.65297581e-02, 0.00000000e+00],
+        [ 0.00000000e+00,  0.00000000e+00,  9.85236826e-05, 0.00000000e+00],
+        [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00, 1.00000000e+00]])
+    extrin1 = np.array([
+        [ -0.92658735,  -0.18537533,   0.32721839,   5.96535952],
+        [  0.09001303,  -0.95410419,  -0.28562712,   0.4378827 ],
+        [ -0.36514866,   0.23520456,  -0.90074706, -11.21691843],
+        [  0.        ,   0.        ,   0.        ,   1.        ]])
+    mat_proj1 = intrin1 @ extrin1
 
-    p2d_obj = np.array([
+    intrin2 = np.array([
+        [ 5.70526724e-01, -1.04207211e-02,  1.44571567e-01, 0.00000000e+00],
+        [ 0.00000000e+00,  5.72222890e-01,  9.58610562e-02, 0.00000000e+00],
+        [ 0.00000000e+00,  0.00000000e+00,  9.77468799e-05, 0.00000000e+00],
+        [ 0.00000000e+00,  0.00000000e+00,  0.00000000e+00, 1.00000000e+00]])
+    extrin2 = array([
+        [ -0.99563197,  -0.06659379,   0.06543887,   1.83843325],
+        [  0.06148772,  -0.99512039,  -0.0771665 ,   1.21802798],
+        [ -0.07025837,   0.07280575,  -0.99486838, -10.44356858],
+        [  0.        ,   0.        ,   0.        ,   1.        ]])
+    mat_proj2 = intrin2 @ extrin2
+
+    p2d_obj1 = np.array([
+        [283, 265],
+        [662 657],
+        [642 758],
+        [707 698],
+        [599 718]
+    ])
+    p2d_obj2 = np.array([
+        [280 345],
+        [964 691],
+        [929 790],
+        [914 759],
+        [974 724]
+    ])
+
+    p2d_ell_obj = np.array([
         [282, 264],
         [690, 659],
         [613, 757],
@@ -599,18 +630,23 @@ if __name__ == "__main__":
         [ 0.7    ,  0.02828, -0.03182],
         [ 0.7    , -0.02828,  0.03182],
         [ 0.7    ,  0.04257,  0.     ]])
-    p2d_src = geo.project_points3d_to_2d(np.array([0., 0, 0, -0.7, 0.2, -0.2]), mat_proj, p3d_src)
-    vis.draw_axis3d(img, cam)
-    vis.draw_points2d(img, p2d_obj)
+
+    cv2.solvePnP()
+
+
+        
+    p2d_ell_src = geo.project_points3d_to_2d(np.array([0., 0, 0, -0.7, 0.2, -0.2]), mat_proj1, p3d_src)
+    Visualizer.draw_axis3d(img, cam)
+    Visualizer.draw_points2d(img, p2d_ell_obj)
 
     ellipse_obj = Ellipse2d()
-    ellipse_obj._set_by_5points2d(p2d_obj[1:])
+    ellipse_obj._set_by_5points2d(p2d_ell_obj[1:])
 
     ellipse_src = Ellipse2d()
-    ellipse_src._set_by_5points2d(p2d_src[1:])
+    ellipse_src._set_by_5points2d(p2d_ell_src[1:])
 
     ellipse_obj = Ellipse2d()
-    ellipse_obj._set_by_5points2d(p2d_obj[1:])
+    ellipse_obj._set_by_5points2d(p2d_ell_obj[1:])
 
     T_obj = np.eye(3)
     T_obj[:2, -1] = -ellipse_obj.point2d_center
@@ -632,20 +668,11 @@ if __name__ == "__main__":
 
     #ellipse_src_rt.radius_u, ellipse_src_rt.radius_v, ellipse_src_rt.point2d_center[0], ellipse_src_rt.point2d_center[1], ellipse_src_rt.theta_rad)
     #ellipse_std.draw(img, color=(255, 255, 255), thickness=1)
-
     
     relation = classify_relative_position_between_2ellipes(ellipse_obj_rt, ellipse_src_rt)
 
-    #e1  = Ellipse2d()._set_by_6pars(3, 2, 0, 0)
-    e2  = Ellipse2d()
     print(relation.name, relation.value)
    
-    import matplotlib.pyplot as plt
-    plt.imshow(img)
-    plt.show()
-    #cv2.namedWindow("", cv2.WINDOW_FREERATIO)
-    # cv2.imshow("", img)
-    # cv2.waitKey()
-    print()
-            
+     
+
 
