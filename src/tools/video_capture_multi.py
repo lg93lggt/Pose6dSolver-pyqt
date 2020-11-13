@@ -13,7 +13,7 @@ if __name__ == '__main__':
     cam2 = cv2.VideoCapture(4)
     cam3 = cv2.VideoCapture(2)
     
-    dir_output = "/home/veily/桌面/1005"
+    dir_output = "/home/veily/桌面/1138"
     dirs_output = []
     for i_cam in range(n_cams):
         dir_new = os.path.join(dir_output, str(i_cam+1))
@@ -25,8 +25,10 @@ if __name__ == '__main__':
     while True:
         ret1, img1 = cam1.read()
         ret2, img2 = cam2.read()
-        ret2, img3 = cam3.read()
-        if ret1 and ret2:
+        ret3, img3 = cam3.read()
+        ret4, cv_img1 = cv2.findChessboardCorners(img1, (9, 6), None)
+        ret5, cv_img2 = cv2.findChessboardCorners(img3, (9, 6), None)
+        if ret1 and ret2 and ret4 and ret5:
             cv2.imshow("1", img1)
             cv2.imshow("2", img2)
             cv2.imshow("3", img3)

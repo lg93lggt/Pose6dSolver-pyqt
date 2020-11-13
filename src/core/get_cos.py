@@ -72,10 +72,10 @@ def get_angle(vec1, vec2, rtvec1=np.zeros(6), rtvec2=np.zeros(6)):
 #     FileIO.imwrite("/home/veily/桌面/Pose6dSolver-pyqt/report/{}/2.jpg".format(i_scene), img2)
 
 # 原始 图1
-# 点 1:    [ 69 230]
+# 点 1:    [ 69 230] [ 66 230]
 # 点 2:    [185 281]
 # 点 3:    [154 274]
-# 点 4:    [171 315], [172, _], [173, _], [174, _], [170, _], [169, _], [168, _], [171, 316] 317
+# 点 4:    [171 317] 
 
 i_scene = 19
 log = fio.load_log("solve", i_scene, 0)
@@ -87,11 +87,10 @@ v1 = np.array([0, 0, 0.3, 0])
 v2 = np.array([0, 0.2, 0, 0])
 angle = get_angle(v1, v2, theta)
 
-id = "v_1"
-pth = "C:/Users/Li/Desktop/Pose6dSolver-pyqt/姿态测量4/test_cov/{}.txt".format(id)
-np.savetxt(pth, np.hstack((res, angle)))
-print(pth)
-std = np.std(ts)
-var = np.var(ts)
-avg = np.average(ts)
+id = "u_-1_v_2"
+pth = "./姿态测量4/test_cov/{}.txt".format(id)
+#np.savetxt(pth, np.hstack((res, angle)))
+
+np.cov()
+
 print()
