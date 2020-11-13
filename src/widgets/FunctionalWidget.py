@@ -8,7 +8,6 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui     import *
 from PyQt5.QtCore    import *
 import numpy as np
-from core.Visualizer import Visualizer
 
 sys.path.append("..")
 from ui import * 
@@ -71,8 +70,8 @@ class FunctionalWidget(QWidget, Ui_FunctionalWidget.Ui_Form):
             sub_maul_widget.sig_rtvec_changed.connect(self.slot_send_rtvec_msg)
 
             layout_tab = QHBoxLayout()
-            sub_tab.setLayout(layout_tab)
             layout_tab.addWidget(sub_maul_widget)
+            sub_tab.setLayout(layout_tab)
         #self.show()
         return
 
@@ -119,10 +118,12 @@ class FunctionalWidget(QWidget, Ui_FunctionalWidget.Ui_Form):
     @pyqtSlot()
     def on_btn_save_clicked(self):
         print("保存:")
-        for i_obj in range(self.n_objs):
-            rtvec = self.get_sub_tab_widget(i_obj).get_rtvec()
-            self.window().fio.save_theta(i_obj, self.window().i_scene, rtvec)
-
+        # for i_obj in range(self.n_objs):
+        #     rtvec = self.get_sub_tab_widget(i_obj).get_rtvec()
+        #     self.window().fio.save_theta(i_obj, self.window().i_scene, rtvec)
+        for i_cam in range(len(self.window().cams)):
+            dock_widget = self.window().visualize_area.get_sub_dock_widget(i_cam)
+            dock_widget.slot_save_image()
         if self.debug:
             print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_btn_run_clicked.signal))
         pass
@@ -133,5 +134,6 @@ if  __name__ == "__main__":
 
     app = QtWidgets.QApplication(sys.argv)
     widget = FunctionalWidget(None)
+    widget.init_sub_tab_widgets(2)
     widget.show()
     sys.exit(app.exec_())

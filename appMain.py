@@ -12,8 +12,6 @@ import numpy as np
 
 
 sys.path.append("./src")
-from ui import *
-from core import *
 from widgets import MainWindow
 
 if __name__ == "__main__":

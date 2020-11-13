@@ -5,14 +5,14 @@ from typing import Any, Dict, List, Sequence, Tuple
 
 import cv2
 import numpy as np
-#import sympy as sp
+import sympy as sp
 sys.path.append("..")
 from core import eps 
 from core import geometry as geo
 from core import Conic
 
 
-class Ellipse2d(Conic.Conic2d):
+class Ellipse2d(object):
     """
     Conic(input_mat):           \\
         init by mat C           \\
@@ -601,17 +601,17 @@ if __name__ == "__main__":
 
     p2d_obj1 = np.array([
         [283, 265],
-        [662 657],
-        [642 758],
-        [707 698],
-        [599 718]
+        [662, 657],
+        [642, 758],
+        [707, 698],
+        [599, 718]
     ])
     p2d_obj2 = np.array([
-        [280 345],
-        [964 691],
-        [929 790],
-        [914 759],
-        [974 724]
+        [280, 345],
+        [964, 691],
+        [929, 790],
+        [914, 759],
+        [974, 724]
     ])
 
     p2d_ell_obj = np.array([

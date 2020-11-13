@@ -17,7 +17,7 @@ from ui import Ui_ScenesTableWidget
 
 
 class ScenesTableWidget(QWidget, Ui_ScenesTableWidget.Ui_Form):
-    sig_tabel_double_clicked = pyqtSignal(str, int, int)
+    sig_tabel_double_clicked = pyqtSignal(int, int)
 
     def __init__(self, parent=None):
         super().__init__(parent)
@@ -25,6 +25,7 @@ class ScenesTableWidget(QWidget, Ui_ScenesTableWidget.Ui_Form):
         self.debug = parent.debug if parent else True
         self.table_widget.setEditTriggers(QTableView.NoEditTriggers)  # 不可编辑
         self.table_widget.setSelectionBehavior(QAbstractItemView.SelectRows);  # 设置只有行选中
+        self.table_widget.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeToContents)
         return
 
     def set_shape(self, n_rows=0, n_cols=0):
@@ -101,7 +102,7 @@ class ScenesTableWidget(QWidget, Ui_ScenesTableWidget.Ui_Form):
         
     @pyqtSlot(int, int)
     def on_tableWidget_cellDoubleClicked(self, i_row: int, i_col: int):
-        self.sig_tabel_double_clicked.emit(self.objectName(), i_row, i_col)
+        self.sig_tabel_double_clicked.emit(i_row, i_col)
         return
 
     def solt_mode_receive(self, mode: str):
@@ -110,6 +111,7 @@ class ScenesTableWidget(QWidget, Ui_ScenesTableWidget.Ui_Form):
         return
 
 class ObjectTableWidget(ScenesTableWidget):
+    sig_tabel_double_clicked = pyqtSignal(str, int, int)
     def __init__(self, parent=None) -> None:
         super().__init__(parent)
         self.array = None

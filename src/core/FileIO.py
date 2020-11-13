@@ -18,21 +18,21 @@ def copy_file(pth_src: str, pth_dst: str) -> None:
     shutil.copyfile(pth_src, pth_dst)
     return
 
-def save_numpy_txt(pth: str, array: np.ndarray) -> None:
+def save_numpy_txt(pth: str, array: np.ndarray, format="%.4f") -> None:
     [dir_file, _, suffix] = split_path(pth)
     if not os.path.exists(dir_file):
         make_dir(dir_file)
-    np.savetxt(pth, array)
-    print("\n保存至:\t{}".format(pth))
+    np.savetxt(pth, array, format)
+    print("保存至:\t{}".format(pth))
     return
     
-def load_numpy_txt(pth: str) -> np.ndarray:
+def load_numpy_txt(pth: str, dtype=float) -> np.ndarray:
     if not os.path.exists(pth):
-        print("文件不存在: ", pth)
+        print("错误: 文件不存在.")
         return
     else:
-        print("加载: ", pth)
-        return np.loadtxt(pth)
+        print("打开:\t{}".format(pth))
+        return np.loadtxt(pth, dtype=dtype)
 
 def savez_numpy_txt(pth: str, array: np.ndarray, indexes: np.ndarray) -> None:
     [dir_file, _, suffix] = split_path(pth)
@@ -42,10 +42,16 @@ def savez_numpy_txt(pth: str, array: np.ndarray, indexes: np.ndarray) -> None:
     print("\n保存至:\t{}".format(pth))
     return
 
-def imread(pth_image):
+def imread(pth_image: str):
     img = cv2.imdecode(np.fromfile(pth_image, np.uint8), -1)
     return img
 
+def imwrite(pth_image: str, image: np.ndarray):
+    [dir_image, prefix_image, suffix_image] = split_path(pth_image)
+    make_dir(dir_image)
+    cv2.imencode("." + suffix_image, image)[1].tofile(pth_image)
+    print("保存图像: ", pth_image)
+    return
 
 def split_path(pth_file: str):
     [dir_file, filename] = os.path.split(pth_file)
@@ -57,7 +63,7 @@ def make_dir(dir_new: str):
         return
     elif not os.path.exists(dir_new):
         os.makedirs(dir_new)
-        print("\n新建文件夹:\t{}".format(dir_new))
+        print("新建文件夹:\t{}".format(dir_new))
         return
 
 def get_sub_dirs_names(dir_motherfolder: str):
@@ -170,6 +176,11 @@ def load_model_from_stl_binary(pth_file: str):
         fp.close()
         return model
 
+def name2index(name: str):
+    return int(name.split("_")[1]) - 1
+
+def index2name(name: str, index: int):
+    return "{}_{:d}".format(name, index + 1)
 
 
 class FileIO(object):
@@ -192,8 +203,7 @@ class FileIO(object):
         self.struct.dir_root = os.path.abspath(project_folder_pth)
         make_dir(self.struct.dir_root)
         self.make_dirs()
-        self.save_project()
-        self.make_cube_points3d_calib()
+        self.make_cube_calib()
         return
         
     def make_dirs(self):
@@ -210,7 +220,7 @@ class FileIO(object):
             print(str_out, "\t", item)
         return
 
-    def make_cube_points3d_calib(self):
+    def make_cube_calib(self):
         points3d_unit_cube = np.array(
            [[0, 0, 0],
             [1, 0, 0],
@@ -221,19 +231,39 @@ class FileIO(object):
             [1, 1, 1],
             [0, 1, 1]]
         )
+        points3d_cube = points3d_unit_cube * self.struct.calib.unit_length
         dir_sub = os.path.join(self.struct.dir_root, "points3d_calib")
         make_dir(dir_sub)
         pth = os.path.join(dir_sub, "obj_1.txt")
         with open(pth, "w") as fp:
-            save_numpy_txt(pth, points3d_unit_cube * self.struct.calib.unit_length)
-            print(pth)
+            print("\n生成标定架3D关键点:")
+            save_numpy_txt(pth, points3d_cube)
+
+        lines_cube = np.array([
+            [0, 1],
+            [1, 2],
+            [2, 3],
+            [3, 0],
+            [4, 5],
+            [5, 6],
+            [6, 7],
+            [7, 4],
+            [0, 4],
+            [1, 5],
+            [2, 6],
+            [3, 7],
+        ], dtype=np.int)
+        pth = os.path.join(dir_sub, "lines_1.txt")
+        with open(pth, "w") as fp:
+            print("\n生成标定架骨架:")
+            save_numpy_txt(pth, lines_cube, format="%d")
         return
 
     def save_project(self):
         pth_project_ini = os.path.join(self.struct.dir_root, "project.ini")
         with open(pth_project_ini, "w", encoding="utf-8") as fp:
             json.dump(self.struct, fp, indent=4, ensure_ascii=False)
-            print("更新并保存工程文件.")
+            print("\n保存工程配置文件.")
         return
 
     def load_project_from_filedir(self, project_folder_pth: str="./姿态测量"):
@@ -249,14 +279,14 @@ class FileIO(object):
         self.match_pairs("calib")
         self.match_pairs("solve")
         self.save_project()
-        self.make_cube_points3d_calib()
+        self.make_cube_calib()
         return
 
     def set_unit_length(self, length: Any):
         try:
             self.struct.calib.unit_length = float(length)
         except ValueError:
-            print("字符串格式错误.")
+            print("错误: 字符串格式错误.")
         return
 
     def match_pairs(self, mode: str):
@@ -269,7 +299,7 @@ class FileIO(object):
         for i_scene in range(n_scenes):
             pairs_cams = []
             for i_cam in range(n_cams):
-                pairs_cams.append(os.path.join("images_" + mode, self.index2name("cam", i_cam), self.index2name("scene", i_scene) + ".png"))
+                pairs_cams.append(os.path.join("images_" + mode, index2name("cam", i_cam), index2name("scene", i_scene) + ".png"))
             pairs_scene.append(pairs_cams)
         self.struct[mode].images = pairs_scene
 
@@ -277,27 +307,26 @@ class FileIO(object):
         list2d = []
         list3d = []
         for i_scene in range(n_scenes):
-            name_scene = self.index2name("scene", i_scene)
+            name_scene = index2name("scene", i_scene)
             list_scense2d = []
             list_scense3d = []
             for i_obj in range(n_objs):
                 list_obj_2d = []
                 list_obj_3d = []
-                name_obj = self.index2name("obj", i_obj)
-                pth_points3d = os.path.join("points3d_" + mode, name_obj + ".txt")
+                name_obj = index2name("obj", i_obj)
+                pth_indexes3d = os.path.join("points3d_" + mode, name_obj + ".txt")
                 for i_cam in range(n_cams):
-                    name_cam = self.index2name("cam", i_cam)
+                    name_cam = index2name("cam", i_cam)
                     pth_points2d = os.path.join("points2d_" + mode, name_cam, name_obj, name_scene + ".txt")
-                    pth_points3d = os.path.join("points3d_" + mode, name_cam, name_obj, name_scene + ".npz")
+                    pth_indexes3d = os.path.join("points3d_" + mode, name_cam, name_obj, name_scene + ".txt")
                     list_obj_2d.append(pth_points2d)
-                    list_obj_3d.append(pth_points3d)
+                    list_obj_3d.append(pth_indexes3d)
                 list_scense2d.append(list_obj_2d)
                 list_scense3d.append(list_obj_3d)
             list2d.append(list_scense2d)
             list3d.append(list_scense3d)
             self.struct[mode].points2d = list2d.copy()
             self.struct[mode].points3d = list3d.copy()
-        self.save_project()
         return
 
     def load_images_from_motherfolder_dir(self, dir_motherfolder: str, mode: str=""):
@@ -315,6 +344,10 @@ class FileIO(object):
                 if tmp != []:
                     tmp.sort()
                     pths_input_images.append(tmp) 
+        if pths_input_images == []:
+            print("\n错误: 未找到图像.")
+            return
+        
         n_cams   = len(pths_input_images)
         n_scenes = len(pths_input_images[0])
 
@@ -326,7 +359,7 @@ class FileIO(object):
 
         if self.struct[mode].n_cams > 0:
             for i_cam in range(self.struct[mode].n_cams): # 复制标定图像至标定图像文件夹
-                dir_new = os.path.join(self.struct.dir_root, "images_" + mode, self.index2name("cam", i_cam))
+                dir_new = os.path.join(self.struct.dir_root, "images_" + mode, index2name("cam", i_cam))
                 for i_scene in range(self.struct[mode].n_scenes):
                     name_scene = "scene_{:d}".format(i_scene + 1)
                     pth_old = pths_input_images[i_cam][i_scene]
@@ -334,38 +367,63 @@ class FileIO(object):
                     copy_file(pth_old, pth_new)
                     print("复制:\t{}\t到:\{}".format(pth_old, pth_new))
         self.match_pairs(mode)
-        self.save_project()
-        return pths_input_images
+        return 
 
     def load_points3d_from_motherfolder_dir(self, dir_motherfolder: str, mode: str=""):
         """
             加载3d点文件夹
         """
         suffixes_obj      = [".txt"] # 可选后缀
-        pths_input_models = []
+        pths_input_points3d = []
         for suffix_obj in suffixes_obj:
             pth_obj = os.path.join(dir_motherfolder, "*" + suffix_obj)
-            pths_input_models = glob.glob(pth_obj)
-            if pths_input_models != []:
-                pths_input_models.sort()
-        n_objs = len(pths_input_models)
+            pths_input_points3d = glob.glob(pth_obj)
+            if pths_input_points3d != []:
+                pths_input_points3d.sort()
+        n_objs = len(pths_input_points3d)
         self.struct[mode].n_objs = n_objs
         if not (mode in self.struct.keys()):
-            return pths_input_models
+            return pths_input_points3d
 
         self.make_dirs()
         #self.make_file_structure_subdirs(mode)
 
-        self.outprint("{}:".format("load"), pths_input_models)
         if n_objs > 0:
             for i_obj in range(n_objs): # 复制至文件夹
-                pth_old = pths_input_models[i_obj]
-                name_obj = "obj_{:d}".format(i_obj + 1)
+                pth_old = pths_input_points3d[i_obj]
+                name_obj = index2name("obj", i_obj)
                 pth_new = os.path.join(self.struct.dir_root, "points3d_" + mode, name_obj + ".txt")
                 copy_file(pth_old, pth_new)
                 print("复制:\t{}\t到:\{}".format(pth_old, pth_new))
-        self.save_project()
-        return pths_input_models
+        return pths_input_points3d
+
+    def load_lines_from_motherfolder_dir(self, dir_motherfolder: str, mode: str=""):
+        """
+            加载骨架连线文件夹
+        """
+        suffixes_obj      = [".txt"] # 可选后缀
+        pths_input_lines = []
+        for suffix_obj in suffixes_obj:
+            pth_obj = os.path.join(dir_motherfolder, "*" + suffix_obj)
+            pths_input_lines = glob.glob(pth_obj)
+            if pths_input_lines != []:
+                pths_input_lines.sort()
+        n_objs = len(pths_input_lines)
+        self.struct[mode].n_objs = n_objs
+        if not (mode in self.struct.keys()):
+            return pths_input_lines
+
+        self.make_dirs()
+        #self.make_file_structure_subdirs(mode)
+
+        if n_objs > 0:
+            for i_obj in range(n_objs): # 复制至文件夹
+                pth_old = pths_input_lines[i_obj]
+                name_obj = index2name("lines", i_obj)
+                pth_new = os.path.join(self.struct.dir_root, "points3d_" + mode, name_obj + ".txt")
+                copy_file(pth_old, pth_new)
+                print("复制:\t{}\t到:\{}".format(pth_old, pth_new))
+        return pths_input_lines
 
     def load_modeles_from_motherfolder_dir(self, dir_motherfolder: str, mode: str=""):
         """
@@ -391,130 +449,235 @@ class FileIO(object):
         if n_models > 0:
             for i_obj in range(n_models): # 复制至文件夹
                 pth_old = pths_input_models[i_obj]
-                name_model = "obj_{:d}".format(i_obj + 1)
+                name_model = index2name("obj", i_obj)
                 pth_new = os.path.join(self.struct.dir_root, "models_" + mode, name_model + ".stl")
                 copy_file(pth_old, pth_new)
                 print("复制:\t{}\t到:\{}".format(pth_old, pth_new))
         self.save_project()
         return pths_input_models
 
-    def name2index(self, name: str):
-        return int(name.split("_")[1]) - 1
-
-    def index2name(self, name: str, index: int):
-        return "{}_{:d}".format(name, index + 1)
-
     def load_points2d(self, mode: str, scene: str or int, obj: str or int, cam: str or int):
+        [ret, data]  = [False, None]
         if isinstance(scene, str):
-            scene = self.name2index(scene)
+            scene = name2index(scene)
         if isinstance(obj, str): 
-            obj = self.name2index(obj)
+            obj = name2index(obj)
         if isinstance(cam, str): 
-            cam = self.name2index(cam)
+            cam = name2index(cam)
         pth = os.path.join(
             self.struct.dir_root,
             self.struct[mode].points2d[scene][obj][cam]
         )
+        print("加载 图像{}/物体{}/相机{} 2D关键点:".format(scene + 1, obj + 1, cam + 1))
         if not os.path.exists(pth):
-            print("文件不存在", pth)
-            return 
+            print("错误: 文件不存在.\n")
         else:
-            print("加载:", pth)
             poins2d = np.loadtxt(pth)
-            return poins2d.astype(np.int)
+            ret     = True
+            data    = poins2d.astype(np.int)
+        return [ret, data]
 
     def load_points3d(self, mode: str, obj: str or int):
-        if isinstance(obj, str): 
-            obj = self.name2index(obj)
+        [ret, data]  = [False, None]
+        if isinstance(obj, int): 
+            obj = index2name("obj", obj)
         pth = os.path.join(
-            self.struct.dir_root,
-            "points3d_" + mode,
-            (self.index2name("obj", obj) if isinstance(obj, int) else obj) + ".txt"
-        )
+                self.struct.dir_root,
+                "points3d_" + mode,
+                obj  + ".txt"
+            )
         if not os.path.exists(pth):
-            print("文件不存在", pth)
-            return 
+            print("错误: 文件不存在.\n")
+             
         else:
-            print("加载:", pth)
-            return  np.loadtxt(pth)
+            print("加载 物体{} 3D关键点:".format(name2index(obj) + 1))
+            ret  = True
+            data = load_numpy_txt(pth)
+        return [ret, data]
 
-    def loadz_points3d(self, mode: str, scene: str or int, obj: str or int, cam: str or int):
+    def load_indexes3d(self, mode: str, scene: str or int, obj: str or int, cam: str or int):
+        [ret, data]  = [False, None]
         if isinstance(scene, str):
-            scene = self.name2index(scene)
+            scene = name2index(scene)
         if isinstance(obj, str): 
-            obj = self.name2index(obj)
+            obj = name2index(obj)
         if isinstance(cam, str): 
-            cam = self.name2index(cam)
+            cam = name2index(cam)
         pth = os.path.join(
             self.struct.dir_root,
             self.struct[mode].points3d[scene][obj][cam]
         )
+        print("加载 图像{}/物体{}/相机{} 3D关键点索引:".format(scene + 1, obj + 1, cam + 1))
         if not os.path.exists(pth):
-            print("文件不存在", pth)
-            return 
+            print("错误: 文件不存在.\n")
         else:
-            print("加载:", pth)
-            points3dz = np.load(pth)
-            return points3dz
+            ret  = True
+            data = load_numpy_txt(pth, dtype=np.int)
+        return [ret, data]
 
-    def save_points2d(self, mode: str, scene: str or int, obj: str or int, cam: str or int, array: np.ndarray) -> None:
-        if isinstance(scene, str):
-            scene = self.name2index(scene)
+    def load_backbonelines(self, mode: str, obj: str or int):
+        [ret, data]  = [False, None]
         if isinstance(obj, str): 
-            obj = self.name2index(obj)
-        if isinstance(cam, str): 
-            cam = self.name2index(cam)
-        pth = os.path.join(self.struct.dir_root, self.struct[mode].points2d[scene][obj][cam])
-        save_numpy_txt(pth, array)
-        print("\n保存至:\t{}".format(pth))
-        return
-
-    def save_points3d(self, mode: str, scene: str or int, obj: str or int, cam: str or int, array: np.ndarray) -> None:
-        pth = os.path.join(self.struct.dir_root, self.struct[mode].points3d[scene][obj][cam])
-        save_numpy_txt(pth, array)
-        print("\n保存至:\t{}".format(pth))
-        return
-
-    def savez_points3d(self, mode: str, scene: str or int, obj: str or int, cam: str or int,array: np.ndarray, indexes: np.ndarray) -> None:
-        if isinstance(scene, str):
-            scene = self.name2index(scene)
-        if isinstance(obj, str): 
-            obj = self.name2index(obj)
-        if isinstance(cam, str): 
-            cam = self.name2index(cam)
-        pth = os.path.join(self.struct.dir_root, self.struct[mode].points3d[scene][obj][cam])
-        savez_numpy_txt(pth, array, indexes)
-        print("\n保存至:\t{}".format(pth))
-        return
+            obj = name2index(obj)
+        pth = os.path.join(
+            self.struct.dir_root,
+            "points3d_" + mode,
+            (index2name("lines", obj) if isinstance(obj, int) else obj) + ".txt"
+        )
+        if not os.path.exists(pth):
+            print("错误: 文件不存在.\n")
+             
+        else:
+            print("加载 物体{} 3D关键点连线:".format(obj + 1))
+            ret  = True
+            data = load_numpy_txt(pth)
+            data = data.astype(np.int)
+        return [ret, data]
 
     def load_image_raw(self, mode: str, scene: str or int, cam: str or int):
+        [ret, data]  = [False, None]
         if isinstance(scene, str):
-            scene = self.name2index(scene)
+            scene = name2index(scene)
         if isinstance(cam, str): 
-            cam = self.name2index(cam)
+            cam = name2index(cam)
         pth = os.path.join(self.struct.dir_root, self.struct[mode].images[scene][cam])
         if os.path.exists(pth):
-            print("加载:", pth)
-            return imread(pth)
+            print("加载图像:", pth)
+            ret  = True
+            data = imread(pth)
         else:
-            return
+            print("错误: 文件不存在.\n")
+        return [ret, data]
 
     def load_image_visualize(self, mode: str, scene: str or int, obj: str or int, cam: str or int):
+        [ret, data]  = [False, None]
         if isinstance(scene, str):
-            scene = self.name2index(scene)
+            scene = name2index(scene)
         if isinstance(obj, str): 
-            obj = self.name2index(obj)
+            obj = name2index(obj)
         if isinstance(cam, str): 
-            cam = self.name2index(cam)
+            cam = name2index(cam)
         pth = os.path.join(
             self.struct.dir_root,
             self.struct[mode].visualize[scene][obj][cam]
         )
-        return imread(pth)
+        if os.path.exists(pth):
+            data = imread(pth)
+            ret  = True
+        return [ret, data]
+
+    def load_camera_pars(self, cam: str or int):
+        [ret, data]  = [False, None]
+        if isinstance(cam, int): 
+            cam = index2name("cam", cam)
+        pth = os.path.join(
+            self.struct.dir_root, 
+            "results_calib",
+            cam,
+            "camera_pars.json"
+        )
+        print("加载 相机{} 参数:".format(name2index(cam) + 1))
+        if os.path.exists(pth):
+            with open(pth) as fp:
+                data = EasyDict(json.load(fp))
+                camera_pars= EasyDict({})
+                camera_pars.intrin = np.array(data.intrin)
+                camera_pars.extrin = np.array(data.extrin)
+                camera_pars.rvec = np.array(data.rvec)
+                camera_pars.tvec = np.array(data.tvec)
+            ret  = True
+            data = camera_pars
+        else:
+            print("错误: 相机未标定.\n")
+        return [ret, data]
+
+    def load_log(self, mode: str, scene: str, obj: str):
+        if isinstance(scene, int):
+            scene = index2name("scene", scene)
+        if isinstance(obj, int): 
+            obj = index2name("obj", obj)
+        pth = os.path.join(
+            self.struct.dir_root,
+            "logs_" + mode,
+            obj,
+            scene+".txt"
+        )
+        if os.path.exists(pth):
+            print("加载:", pth)
+            return np.loadtxt(pth)
+        else:
+            return    
+
+    def load_theta(self, scene: str or int, obj: str or int):
+        [ret, data]  = [False, None]
+        if isinstance(scene, int):
+            scene = index2name("scene", scene)
+        if isinstance(obj, int):
+            obj = index2name("obj", obj)
+        pth = os.path.join(
+            self.struct.dir_root, 
+            "results_solve",
+            obj,
+            scene + ".txt"
+        )
+        print("加载 物体{}/图像{} 姿态:".format(name2index(obj) + 1, name2index(scene) + 1))
+        data = load_numpy_txt(pth)
+        if not(data is None):
+            ret = True
+        return [ret, data]
+
+    def load_model(self, mode: str, obj: str or int):
+        [ret, data]  = [False, None]
+        if isinstance(obj, str): 
+            obj = name2index(obj)
+        pth = os.path.join(
+            self.struct.dir_root,
+            "models_" + mode,
+            (index2name("obj", obj) if isinstance(obj, int) else obj) + ".stl"
+        )
+        print("加载 物体{} 模型:".format(obj + 1))
+        if not os.path.exists(pth):
+            print("错误: 文件不存在.\n")
+        else:
+            data = load_model_from_stl_binary(pth)
+            ret  = True
+        return [ret, data]
+
+    def save_points2d(self, mode: str, scene: str or int, obj: str or int, cam: str or int, array: np.ndarray) -> None:
+        if isinstance(scene, str):
+            scene = name2index(scene)
+        if isinstance(obj, str): 
+            obj = name2index(obj)
+        if isinstance(cam, str): 
+            cam = name2index(cam)
+        pth = os.path.join(self.struct.dir_root, self.struct[mode].points2d[scene][obj][cam])
+        print("保存 图像{}/物体{}/相机{} 2D关键点:".format(scene + 1, obj + 1, cam + 1))
+        save_numpy_txt(pth, array)
+        return
+
+    def save_points3d(self, mode: str, scene: str or int, obj: str or int, cam: str or int, array: np.ndarray) -> None:
+        pth = os.path.join(self.struct.dir_root, self.struct[mode].indexes3d[scene][obj][cam])
+        print("\n保存3D关键点:")
+        save_numpy_txt(pth, array)
+        return
+
+    def save_indexes3d(self, mode: str, scene: str or int, obj: str or int, cam: str or int, indexes: np.ndarray) -> None:
+        if isinstance(scene, str):
+            scene = name2index(scene)
+        if isinstance(obj, str): 
+            obj = name2index(obj)
+        if isinstance(cam, str): 
+            cam = name2index(cam)
+        pth = os.path.join(
+            self.struct.dir_root, 
+            self.struct[mode].points3d[scene][obj][cam])
+        print("保存 图像{}/物体{}/相机{} 3D关键点索引:".format(scene + 1, obj + 1, cam + 1))
+        save_numpy_txt(pth, indexes, format="%d")
+        return
 
     def save_camera_pars(self, cam: int or str, camera_pars):
         if isinstance(cam, int):
-            namse_cam = self.index2name("cam", cam)
+            namse_cam = index2name("cam", cam)
         else:
             namse_cam = cam
         dir_ = os.path.join(
@@ -534,45 +697,28 @@ class FileIO(object):
             print("保存: ", pth)
         return
 
-    def load_camera_pars(self, cam: str or int):
+    def save_image_visualize(self, mode: str, scene: str or int, cam: str or int, img: np.ndarray):
+        if isinstance(scene, int):
+            scene = index2name("scene", scene)
         if isinstance(cam, int): 
-            cam = self.index2name("cam", cam)
+            cam = index2name("cam", cam)
         pth = os.path.join(
-            self.struct.dir_root, 
-            "results_calib",
-            cam,
-            "camera_pars.json"
-        )
-        if os.path.exists(pth):
-            with open(pth) as fp:
-                data = EasyDict(json.load(fp))
-                camera_pars= EasyDict({})
-                camera_pars.intrin = np.array(data.intrin)
-                camera_pars.extrin = np.array(data.extrin)
-                camera_pars.rvec = np.array(data.rvec)
-                camera_pars.tvec = np.array(data.tvec)
-            print("加载:", pth)
-            return camera_pars
-        else:
-            print(cam, "不存在", pth)
-            return
-
-    def save_image_visualize(self, mode: str, name_scene: str, name_obj: str, name_cam: str, img: np.ndarray):
-        pth = os.path.join(
-            self.struct.dir_root, 
-            self.struct[mode].dirs.visualize,
-            self.struct[mode].pairs[name_scene][self.name2index(name_obj)][self.name2index(name_cam)])
-        cv2.imwrite(pth, img)
-        print("保存图像: ", pth)
+                self.struct.dir_root, 
+                "visualize_{}".format(mode),
+                cam,
+                scene + ".jpg"
+            )
+        print("\n保存图像: ", pth)
+        imwrite(pth, img)
         return
 
     def save_chosen_points3d(self, mode: str, scene: str, obj: str, cam: str, points3d: np.ndarray):
         if isinstance(scene, str):
-            scene = self.name2index(scene)
+            scene = name2index(scene)
         if isinstance(obj, str): 
-            obj = self.name2index(obj)
+            obj = name2index(obj)
         if isinstance(cam, str): 
-            cam = self.name2index(cam)
+            cam = name2index(cam)
         pth = os.path.join(
             self.struct.dir_root,
             self.struct[mode].points3d[scene][obj][cam]
@@ -581,28 +727,11 @@ class FileIO(object):
         print("保存: ", pth)
         return
 
-    def load_log_from_file(self, mode: str, scene: str, obj: str, cam: str, points3d: np.ndarray):
-        if isinstance(scene, str):
-            scene = self.name2index(scene)
-        if isinstance(obj, str): 
-            obj = self.name2index(obj)
-        if isinstance(cam, str): 
-            cam = self.name2index(cam)
-        pth = os.path.join(
-            self.struct.dir_root,
-            self.struct[mode].logs[scene][obj][cam]
-        )
-        if os.path.exists(pth):
-            print("加载:", pth)
-            return np.loadtxt(pth)
-        else:
-            return    
-
     def save_log(self, mode: str, scene: str or int, obj: str or int, log: np.ndarray):
         if isinstance(scene, int):
-            scene = self.index2name("scene", scene)
+            scene = index2name("scene", scene)
         if isinstance(obj, int):
-            obj = self.index2name("obj", obj)
+            obj = index2name("obj", obj)
         pth = os.path.join(
             self.struct.dir_root, 
             "logs_" + mode,
@@ -613,105 +742,68 @@ class FileIO(object):
         print("记录保存:\t", pth)
         return
 
-    def save_theta(self, obj: str or int, scene: str or int, theta: np.ndarray):
+    def save_theta(self, scene: str or int, obj: str or int, theta: np.ndarray):
         if isinstance(scene, int):
-            scene = self.index2name("scene", scene)
+            scene = index2name("scene", scene)
         if isinstance(obj, int):
-            obj = self.index2name("obj", obj)
+            obj = index2name("obj", obj)
         pth = os.path.join(
             self.struct.dir_root, 
             "results_solve",
             obj,
             scene + ".txt"
         )
-        save_numpy_txt(pth, theta)
+        save_numpy_txt(pth, theta, format="%.6f")
         print("姿态保存:\t", pth)
         return
 
-    def load_theta(self, scene: str or int, obj: str or int) -> np.ndarray:
-        if isinstance(scene, int):
-            scene = self.index2name("scene", scene)
-        if isinstance(obj, int):
-            obj = self.index2name("obj", obj)
-        pth = os.path.join(
-            self.struct.dir_root, 
-            "results_solve",
-            obj,
-            scene + ".txt"
-        )
-        return load_numpy_txt(pth)
-
-    def load_model(self, mode: str, obj: str or int):
-        if isinstance(obj, str): 
-            obj = self.name2index(obj)
-        pth = os.path.join(
-            self.struct.dir_root,
-            "models_" + mode,
-            (self.index2name("obj", obj) if isinstance(obj, int) else obj) + ".stl"
-        )
-        if not os.path.exists(pth):
-            print("文件不存在", pth)
-            return 
+    def update_mode(self, mode: str):
+        if   mode == "calib":
+            tmp_str = "标定"
+        elif mode == "solve":
+            tmp_str = "测量"
         else:
-            print("加载:", pth)
-            return  load_model_from_stl_binary(pth)
+            raise TypeError(mode, ": 错误的模式.")
+        
+        print("\n加载已有{}数据:".format(tmp_str))
+        objs = []
+        for i_obj in range(self.struct[mode].n_objs):
+            obj = EasyDict({})
+            [ret, pts3d] = self.load_points3d(mode, i_obj)
+            obj.points3d = pts3d
 
-def t():
-    fio = FileIO()
-    dir_project ="./测试"
-    if os.path.exists(dir_project):
-        fio.load_project_from_filedir(dir_project)
-    else:
-        fio.new_project(dir_project)
-    fio.load_images_from_motherfolder_dir("C:/Users/Li/Desktop/Pose6dSolver-pyqt/图像/CamCalib", "calib")
-    fio.load_modeles_from_motherfolder_dir("C:/Users/Li/Desktop/Pose6dSolver-pyqt/图像/model/2", "calib")
-    fio.load_images_from_motherfolder_dir("C:/Users/Li/Desktop/Pose6dSolver-pyqt/测试/images_solve", "solve")
-    fio.load_modeles_from_motherfolder_dir("C:/Users/Li/Desktop/Pose6dSolver-pyqt/图像/model/1", "solve")
-    fio.struct.solve.n_objs = 2
-    fio.match_pairs("solve")
-    fio.match_pairs("calib")
-    return  fio
+            [ret, lines] = self.load_backbonelines(mode, i_obj)
+            obj.lines = lines
 
-def main(args):
-    fio = FileIO()
-    dir_project = args.project
-    dir_input_images_calib =  args.load_calib
-    dir_input_images_solve =  args.load_solve
-    if os.path.exists(dir_project):
-        fio.load_project_from_file(dir_project)
-    else:
-        fio.new_project(dir_project)
-        if dir_input_images_calib:
-            fio.load_images_from_motherfolder_dir(dir_input_images_calib, mode="calib")
-        if dir_input_images_solve:
-            fio.load_images_from_motherfolder_dir(dir_input_images_solve, mode="solve")
-    return  fio
-    
+            [ret, model] = self.load_model(mode, i_obj)
+            obj.model = model
+
+            obj.pose = np.eye(4)
+
+            obj.views = []
+            for i_cam in range(self.struct[mode].n_cams):
+                view = EasyDict({})
+                view.points2d  = None
+                view.indexes3d = None
+                obj.views.append(view)
+            objs.append(obj)
+
+        cams = []
+        for i_cam in range(self.struct[mode].n_cams):
+            [ret, cam_pars] = self.load_camera_pars(i_cam)
+            if ret:
+                cams.append(cam_pars)
+            else:
+                cams.append(None)
+        return [objs, cams]
+
 
 
 if __name__ == "__main__":
-    t()
-    parser = argparse.ArgumentParser("11")
-    parser.add_argument(
-        "--project",
-        nargs='?',
-        type=str,
-        const="./姿态测量",
-        required=False,
-        help="加载工程, 若不存在则新建工程."
-    )
-    parser.add_argument(
-        "-load_calib",
-        type=str,
-        required=False,
-        help="标定图像文件夹."
-    )
-    parser.add_argument(
-        "-load_solve",
-        type=str,
-        required=False,
-        help="测量图像文件夹."
-    )
-    args = parser.parse_args()
-    main(args)
-    print()    
+    fio = FileIO()
+    fio.load_project_from_filedir("../../姿态测量")
+    res1 = fio.update_mode("solve")
+    res2 = fio.update_mode("calib")
+    res2 = fio.update_mode("init")
+    print()
+

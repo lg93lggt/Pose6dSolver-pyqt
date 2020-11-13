@@ -11,12 +11,13 @@ from PyQt5.QtWidgets import *
 from PyQt5.QtGui     import *
 from PyQt5.QtCore    import *
 import numpy as np
+from easydict import EasyDict
 
 
 sys.path.append("..")
 from ui import *
 from core import *
-from widgets import *
+from widgets import DockGraphWidget, EditProject, FunctionalWidget, ManualPoseWidget, NewProject, OpenProject, TableWidget, VisualizeWidget, SettingsDialog
 from slot import * 
 
 
@@ -45,17 +46,18 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
         self.fio = FileIO.FileIO()
 
         # Lv1控件初始化
-        self.scenes_table_area = TableWidget.ScenesTableWidget(self)
-        self.visualize_area    = VisualizeWidget.VisualizeWidget(self)
-        self.functional_area   = FunctionalWidget.FunctionalWidget(self)
+        self.scenes_table_area   = TableWidget.ScenesTableWidget(self)
+        self.visualize_area      = VisualizeWidget.VisualizeWidget(self)
+        self.functional_area     = FunctionalWidget.FunctionalWidget(self)
         self.dialog_new_project  = NewProject.NewProjectDialog(self)
         self.dialog_open_project = OpenProject.OpenProjectDialog(self)
-        self.widget_edit_project = EditProject.EditProjectWidget(self)
+        self.dialog_edit_project = EditProject.EditProjectWidget(self)
+        self.dialog_settings     = SettingsDialog.SettingsDialog(self)
 
         # Lv1控件设置大小
         self.scenes_table_area.setMaximumWidth(200)
-        self.visualize_area.setMinimumWidth(800)
-        self.functional_area.setMaximumWidth(200)
+        # self.visualize_area.setMinimumWidth(800)
+        # self.functional_area.setMaximumWidth(400)
 
         # Lv1控件设置名称
         self.scenes_table_area.setObjectName("tableScenesArea")
@@ -63,7 +65,7 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
         self.functional_area.setObjectName("functionalArea")
         self.dialog_new_project.setObjectName("newProjectDialog")
         self.dialog_open_project.setObjectName("openProjectDialog")
-        self.widget_edit_project.setObjectName("editProgramWidget")
+        self.dialog_edit_project.setObjectName("editProgramWidget")
 
         # Lv2控件初始化n_obj=1
         self.visualize_area.init_sub_dock_widgets(n_cams=1)
@@ -71,15 +73,22 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
 
         self.slot_init_widgets()
 
-        self.visualize_area.sig_choose_points2d_successed.connect(self.solt_save_points2d)
-        self.sig_calibrate_successed.connect(self.visualize_area.slot_accept_calibrate_result)
-
-        self.functional_area.sig_btn_run_clicked.connect(self.slot_run_with_mode)
-
         # 排版
         self.layout_main.addWidget(self.scenes_table_area, 0, 0)
         self.layout_main.addWidget(self.visualize_area, 0, 1)
         self.layout_main.addWidget(self.functional_area, 0, 5)
+
+        self.action_new_project.triggered.connect(self.slot_new_project)
+        self.action_open_project.triggered.connect(self.slot_open_project)
+        self.action_edit_project.triggered.connect(self.slot_edit_project)
+
+        self.action_calib.triggered.connect(self.slot_calib)
+        self.action_solve.triggered.connect(self.slot_solve)
+        self.action_settings.triggered.connect(self.dialog_settings.show)
+
+        self.scenes_table_area.sig_tabel_double_clicked.connect(self.slot_update_scene)
+
+        self.functional_area.btn_run.clicked.connect(self.slot_run_with_mode)
 
         # 激活pyqtSlot装饰器
         QtCore.QMetaObject.connectSlotsByName(self)
@@ -96,119 +105,64 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
 
         <name_sig>.connet(<name_slot>)
     """
-    # 新建工程-------------------------------------------------------------------#
-    @debug
-    @pyqtSlot()
-    def on_actionNewProject_triggered(self) -> None:
-        self.dialog_new_project.sig_accepted.connect(self.slot_creat_new_project)
-        # self.dialog_new_project.sig_rejected.connect() # 取消事件, 暂时不用
-        self.dialog_new_project.show()
-        return 
     
-    @debug
     def slot_creat_new_project(self, pth_new_project: str) -> None:
         self.fio.new_project(pth_new_project)
-        self.widget_edit_project.init_fio(self.fio)
+        self.dialog_edit_project.init_fio(self.fio)
         return
 
-    # 打开工程-------------------------------------------------------------------#
-    @debug
-    @pyqtSlot()
-    def on_actionOpenProject_triggered(self) -> None:
-        self.dialog_open_project.sig_accepted.connect(self.slot_open_project)
-        # self.dialog_new_project.sig_rejected.connect() # 取消事件, 暂时不用
-        self.dialog_open_project.show()
+    # 新建工程-------------------------------------------------------------------#
+    
+    def slot_new_project(self) -> None:
+        print("\n" + "*"*10 + "新建工程" + "*"*10)
+        self.dialog_new_project.show()
         return 
 
     def slot_open_project(self, pth_project: str) -> None:
-        self.fio.load_project_from_filedir(pth_project)
-        self.fio._update()
-        self.widget_edit_project.init_fio(self.fio)
+        print("\n" + "*"*10 + "打开工程" + "*"*10)
+        self.dialog_open_project.show()
         return
 
     # 编辑工程-------------------------------------------------------------------#
-    @debug
-    @pyqtSlot()
-    def on_actionEditProject_triggered(self) -> None:
-        self.widget_edit_project.sig_widget_closed.connect(self.slot_refresh_fio)
-        self.widget_edit_project.sig_unit_length_changed.connect(self.slot_set_unit_length)
-        self.widget_edit_project.sig_choose_images_calib_successed.connect(self.slot_load_images_calib)
-        self.widget_edit_project.sig_choose_images_solve_successed.connect(self.slot_load_images_solve)
-        self.widget_edit_project.sig_choose_models_solve_successed.connect(self.slot_load_models_solve)
-        self.widget_edit_project.sig_choose_points3d_solve_successed.connect(self.slot_load_points3d_solve)
-        # self.widget_edit_project.sig_rejected.connect()
-        self.widget_edit_project.show()
+    def slot_edit_project(self) -> None:
+        print("\n" + "*"*10 + "编辑工程" + "*"*10)
+        self.dialog_edit_project.init_fio()
+        self.dialog_edit_project.show()
         return 
     
-    @debug
     def slot_refresh_fio(self):
-        self.fio.set_unit_length( self.widget_edit_project.line_unit_length_calib.text())
+        self.fio.set_unit_length( self.dialog_edit_project.line_unit_length_calib.text())
         self.fio._update()
-        return
-    
-    @debug
-    def slot_set_unit_length(self, unit_length: float) -> None:
-        self.fio.set_unit_length(unit_length)
-        return
-
-    @debug
-    def slot_load_images_calib(self, dir_images_calib) -> None:
-        self.fio.load_images_from_motherfolder_dir(dir_images_calib, "calib")
-        self.widget_edit_project._update(self.fio)
-        return
-
-    @debug
-    def slot_load_images_solve(self, dir_images_solve) -> None:
-        self.fio.load_images_from_motherfolder_dir(dir_images_solve, "solve")
-        self.widget_edit_project._update(self.fio)
-        return
-
-    @debug
-    def slot_load_points3d_solve(self, dir_points3d_solve) -> None:
-        self.fio.load_points3d_from_motherfolder_dir(dir_points3d_solve, "solve")
-        self.widget_edit_project._update(self.fio)
-        return
-
-    @debug
-    def slot_load_models_solve(self, dir_models_solve) -> None:
-        self.fio.load_modeles_from_motherfolder_dir(dir_models_solve, "solve")
-        self.widget_edit_project._update(self.fio)
         return
 
     # 标定-------------------------------------------------------------------#
-    @debug
-    @pyqtSlot()
-    def on_actionCalib_triggered(self):
-        print("\n标定模式:")
+    def slot_calib(self):
+        print("\n" + "*"*10 + "标定模式" + "*"*10)
         self.mode = "calib"
         self.fio.match_pairs("calib")
-        self.sig_mode_calib_activated.connect(self.scenes_table_area.solt_mode_receive)
-        self.sig_mode_calib_activated.connect(self.visualize_area.solt_mode_receive)
-        self.sig_mode_calib_activated.connect(self.functional_area.solt_mode_receive)
-        self.sig_mode_calib_activated.connect(self.slot_init_widgets)
-        self.sig_mode_calib_activated.emit("calib")
+        [self.objs, self.cams] = self.fio.update_mode(self.mode)
+
+        self.slot_init_widgets()
 
         if self.debug:
             print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_mode_calib_activated.signal))
         return
 
     # 测量-------------------------------------------------------------------#
-    @debug
-    @pyqtSlot()
-    def on_actionSolve_triggered(self):
+    def slot_solve(self):
+        print("\n" + "*"*10 + " 测量模式" + "*"*10)
         self.mode = "solve"
         self.fio.match_pairs("solve")
-        self.sig_mode_solve_activated.connect(self.scenes_table_area.solt_mode_receive)
-        self.sig_mode_solve_activated.connect(self.visualize_area.solt_mode_receive)
-        self.sig_mode_solve_activated.connect(self.slot_init_widgets)
+        [self.objs, self.cams] = self.fio.update_mode(self.mode)
+
+        self.slot_init_widgets()
         self.functional_area.sig_rtvec_changed.connect(self.visualize_area.slot_send_new_retvec)
-        self.sig_mode_solve_activated.emit("solve")
 
         if self.debug:
             print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_mode_solve_activated.signal))
         return
 
-    @debug
+    
     def slot_init_widgets(self):
         """
             初始化子控件,孙控件
@@ -230,99 +184,80 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
         labels_rows = ["相机{:d}".format(i_cam + 1) for i_cam in range(n_cams)]
         labels_rows.append("标定")
         labels_rows.append("解算")
+
         self.scenes_table_area.set_shape(n_scenes, n_cams + 1)
         self.scenes_table_area.set_texts(labels_cols, labels_rows)
         self.scenes_table_area.set_checkboxes(i_col=n_cams)
-        for i_scene in range(n_scenes):
-            data_row = self.fio.struct[mode].images[i_scene]
-            self.scenes_table_area.set_datas_row(data_row, i_scene)
- 
-        # updatae visualize_area
-        self.visualize_area.init_sub_dock_widgets(n_cams)
-        for i_cam in range(self.visualize_area.n_cams):
-            name_cam = "cam_{:d}".format(i_cam + 1)
-            sub_dock_widget = self.visualize_area.findChild(DockGraphWidget.DockGraphWidget, name_cam)
-            sub_dock_widget.init_sub_table_widgets(n_objs)
-            if self.fio.load_camera_pars(i_cam):
-                sub_dock_widget.camera_pars = self.fio.load_camera_pars(i_cam)
 
-        self.scenes_table_area.sig_tabel_double_clicked.connect(self.slot_update_scene)
+        self.visualize_area.init_sub_dock_widgets(n_cams)
+
         for i_cam in range(self.visualize_area.n_cams):
-            self.visualize_area.get_sub_dock_widget(i_cam).sig_sub_tabel_double_clicked.connect(self.slot_update_obj)
+            sub_dock_widget = self.visualize_area.get_sub_dock_widget(i_cam)
+            sub_dock_widget.init_sub_table_widgets(n_objs)
+            sub_dock_widget.sig_sub_tabel_double_clicked.connect(self.slot_update_obj)
+            for i_obj in range(n_objs):
+                sub_dock_widget.get_sub_table_view(i_obj).init_array(self.objs[i_obj].points3d)
 
         self.functional_area.init_sub_tab_widgets(n_objs)
         return
 
-    @debug
-    def slot_update_scene(self, name_object: str, i_row: int, i_col: int):
+    
+    def slot_update_scene(self, i_row: int, i_col: int):
         mode = self.mode
         self.i_scene = i_row
         [n_scenes, n_cams, n_objs] = [self.fio.struct[mode].n_scenes, self.fio.struct[mode].n_cams, self.fio.struct[mode].n_objs]
+        print("\n" + "*"*10 + " 场景{} ".format(self.i_scene + 1) + "*"*10)
+
+        print("\n加载图片:")
         for i_cam in range(n_cams):
-            name_cam = "cam_{:d}".format(i_cam + 1)
-            img = self.fio.load_image_raw(mode, self.i_scene, i_cam)
-            sub_dock_widget = self.visualize_area.get_sub_dock_widget(name_cam)
-            sub_dock_widget.init_img(img)
-            points2d_objs = {}
-            for i_obj in range(n_objs):
-                name_obj = "obj_{:d}".format(i_obj + 1)
-                points3d = self.fio.load_points3d(self.mode, i_obj)
-                sub_table_widget = sub_dock_widget.findChild(TableWidget.ObjectTableWidget, name_obj)
-                sub_table_widget.init_array(points3d)
-                print(sub_table_widget.objectName(), "加载模型3d点:", points3d.shape)
-                if self.fio.loadz_points3d(self.mode, self.i_scene, i_obj, i_cam) is not None:
-                    points2d = self.fio.load_points2d(self.mode, self.i_scene, i_obj, i_cam)
-                    if points2d_objs is not None:
-                        points2d_objs[name_obj] = points2d
-                    else:
-                        continue
-                    
-                    points3d_array_and_indexes = self.fio.loadz_points3d(self.mode, self.i_scene, i_obj, i_cam)
-                    points3d_chosen = points3d_array_and_indexes["array"]
-                    indexes_chosen  = points3d_array_and_indexes["indexes"]
-                    if points3d_chosen.shape[0] > points3d.shape[0]:
-                        print("无法匹配模型与已选点:")
-                        pth_2d = os.path.join(self.fio.struct.dir_root, "points2d_"+mode, name_cam, name_obj, self.fio.index2name("scene", self.i_scene)+".txt")
-                        pth_3d = os.path.join(self.fio.struct.dir_root, "points3d_"+mode, name_cam, name_obj, self.fio.index2name("scene", self.i_scene)+".npz")
-                        if os.path.exists(pth_2d):
-                            os.remove(pth_2d)
-                        if os.path.exists(pth_3d):
-                            points3d_array_and_indexes.close()
-                            os.remove(pth_3d)
-                        print("删除:\n{}\n{}".format(pth_2d, pth_3d))
-                    else:
-                        sub_table_widget.array_chosen   = points3d_chosen
-                        sub_table_widget.indexes_chosen = indexes_chosen
-                        print(sub_table_widget.objectName(), "加载已选3d点:", points3d_chosen.shape)
-                        print(sub_table_widget.objectName(), "加载已选3d点索引:", indexes_chosen)
-            sub_dock_widget.points2d_objs = points2d_objs
-            sub_dock_widget._update_table_widget_show_points()
-            if mode == "solve":
-                self.visualize_area.poses = []
-                for i_obj in range(n_objs):
-                    rtvec = self.fio.load_theta(self.i_scene, i_obj)
-                    if not (rtvec is None):
-                        pose = geometry.t_to_T(rtvec[3:]) @ geometry.r_to_R(rtvec[:3])
-                        self.visualize_area.poses.append(pose)
-                        #self.functional_area.get_sub_tab_widget(i_obj).set_rtvec(rtvec)
-                    else:
-                        self.visualize_area.poses.append(np.eye(4))
-                        #self.functional_area.get_sub_tab_widget(i_obj).set_rtvec(np.zeros(6))
-        #self.findChild(DockGraphWidget.DockGraphWidget, "cam_2").findChild(TableWidget.ObjectTableWidget, "obj_1").array
+            ret, image = self.fio.load_image_raw(self.mode, self.i_scene, i_cam)
+            if ret:
+                self.visualize_area.get_sub_dock_widget(i_cam).init_img(image)
+
+        print("\n加载已选2D点:")
+        for i_obj in range(n_objs):
+            for i_cam in range(n_cams):
+                # 加载2d点
+                ret, pts2d = self.fio.load_points2d(self.mode, self.i_scene, i_obj, i_cam)
+                if ret:
+                    self.objs[i_obj].views[i_cam].points2d = pts2d
+        
+        print("\n加载已选3D点:")
+        for i_obj in range(n_objs):
+            for i_cam in range(n_cams):
+                # 加载3d点
+                ret, indexes = self.fio.load_indexes3d(self.mode, self.i_scene, i_obj, i_cam)
+                if ret:
+                    self.objs[i_obj].views[i_cam].indexes3d = indexes
+                    #self.objs[i_obj].views[i_cam].points3d_chosen = self.objs[i_obj].points3d[self.objs[i_obj].views[i_cam].indexes]
+                else:
+                    self.objs[i_obj].views[i_cam].indexes3d = None
+
+        print("\n加载姿态:")
+        for i_obj in range(n_objs):
+            ret, theta = self.fio.load_theta(self.i_scene, i_obj)
+            if ret:
+                self.objs[i_obj].pose = geometry.rtvec_to_pose(theta)
+            else:
+                self.objs[i_obj].pose = np.eye(4)
+        for i_cam in range(n_cams):
+            self.visualize_area.get_sub_dock_widget(i_cam)._init_table_widget_show_points()
+            self.visualize_area.get_sub_dock_widget(i_cam).draw_all()
+
         return
 
-    @debug
+    
     def slot_update_obj(self, i_row, i_col):
         print("click", i_row)
         return
 
-    @debug
-    def solt_save_points2d(self, name_cam: str, name_obj: str, points2d_n_objs: Dict, points3d_chosen: np.ndarray, indexes_chosen: np.ndarray):
+    
+    def slot_save_points2d(self, name_cam: str, name_obj: str, points2d_n_objs: Dict, points3d_chosen: np.ndarray, indexes_chosen: np.ndarray):
         self.fio.save_points2d(self.mode, self.i_scene, name_obj, name_cam, points2d_n_objs[name_obj])
-        self.fio.savez_points3d(self.mode, self.i_scene, name_obj, name_cam, points3d_chosen, indexes_chosen)
+        self.fio.save_indexes3d(self.mode, self.i_scene, name_obj, name_cam, points3d_chosen, indexes_chosen)
         return
 
-    @debug
+    
     def slot_run_with_mode(self):
         if self.mode == "calib":
             n_cams = self.fio.struct[self.mode].n_cams
@@ -331,11 +266,16 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
             for i_cam in range(n_cams):
                 print ("相机标定{:d} / {:d}:".format(i_cam + 1, n_cams))
                 self.calibrator = CalibratorByDLT.CalibratorByDLT(8, 1)
-                self.calibrator.set_points3d(self.fio.loadz_points3d(self.mode, self.i_scene, "obj_1", self.fio.index2name("cam", i_cam))["array"])
-                self.calibrator.set_points2d(self.fio.load_points2d(self.mode, self.i_scene, "obj_1", self.fio.index2name("cam", i_cam)))
+                points2d  = self.objs[0].views[i_cam].points2d
+                indexes3d = self.objs[0].views[i_cam].indexes3d
+                points3d  = self.objs[0].points3d[indexes3d]
+                self.calibrator.set_points3d(points3d)
+                self.calibrator.set_points2d(points2d)
                 self.calibrator.run()
                 self.fio.save_camera_pars(i_cam, self.calibrator.camera_pars)
-                self.sig_calibrate_successed.emit(i_cam, self.calibrator.camera_pars)
+                self.visualize_area.get_sub_dock_widget(i_cam).draw_all()
+                # else:
+                #     print("标定失败.")
 
                 if self.debug:
                     print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_calibrate_successed.signal))
@@ -344,60 +284,64 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
             n_cams = self.fio.struct[self.mode].n_cams
             n_objs = self.fio.struct[self.mode].n_objs
             n_scenes = self.fio.struct[self.mode].n_scenes
-            cameras_pars = []
-            for i_cam in range(n_cams):
-                camera_pars = self.fio.load_camera_pars(i_cam)
-                if camera_pars is None:
-                    return
-                else:
-                    cameras_pars.append(camera_pars)
-
-            self.models = []
-            for i_obj in range(n_objs):
-                if self.fio.load_model(self.mode, i_obj):
-                    self.models.append(self.fio.load_model(self.mode, i_obj))
 
             is_data_ready = False
             for i_obj in range(n_objs):
                 print("物体: {} / {}".format(i_obj + 1, n_objs))
+                points3d = self.objs[i_obj].points3d
                 points2d_n_cams = []
                 points3d_n_cams = []
+                cams            = []
                 for i_cam in range(n_cams):
-                    points2d = self.fio.load_points2d(self.mode, self.i_scene, i_obj, i_cam)
-                    points3d_npz = self.fio.loadz_points3d(self.mode, self.i_scene, i_obj, i_cam)
-                    if (points2d is None) or (points3d_npz is None):
+                    points2d  = self.objs[i_obj].views[i_cam].points2d
+                    indexes3d = self.objs[i_obj].views[i_cam].indexes3d
+                    if (points2d is  None) or (indexes3d is None):
                         print("物体未选择, 跳过.".format(i_obj + 1))
-                        is_data_ready = False
-                        break
-                    points2d_n_cams.append(points2d)
-                    points3d_n_cams.append(points3d_npz["array"])
-                    is_data_ready = True
+                        continue
+                    else:
+                        cams.append(self.cams[i_cam])
+                        points2d_n_cams.append(points2d.astype(float))
+                        points3d_n_cams.append(points3d[indexes3d])
+                        is_data_ready = True
 
                 if is_data_ready:
-                    if i_obj == 0:
-                        self.solver = SolverPoses6d.SolverPoses6dConic("Adam", n_iters=100, alpha=0.001, beta1=0.9, beta2=0.99)
+                    if self.dialog_settings.settings.FLAGS_POINTS2D == 0:
+                        if i_obj == 0:
+                            self.solver = SolverPoses6d.load_setttings(self.dialog_settings.settings.FLAGS_POINTS2D, self.dialog_settings.settings)
                     else: # TODO
-                        #self.solver = SolverPoses6d.SolverPoses6d("LM", n_iters=1000, alpha=0.01) 
-                        self.solver = SolverPoses6d.SolverPoses6d("Adam", n_iters=1000, alpha=0.001, beta1=0.9, beta2=0.99) 
-                    self.solver.set_cameras_pars(cameras_pars)
+                        n_iters = self.dialog_settings.settings.hyper_params_adam.n_iters
+                        alpha   = self.dialog_settings.settings.hyper_params_adam.alpha
+                        beta1   = self.dialog_settings.settings.hyper_params_adam.beta1
+                        beta2   = self.dialog_settings.settings.hyper_params_adam.beta2
+                        self.solver = SolverPoses6d.load_setttings(self.dialog_settings.settings.FLAGS_POINTS2D, self.dialog_settings.settings)
+                    self.solver.set_cameras_pars(cams)
                     self.solver.set_points2d_of_n_cams(points2d_n_cams)    
-                    self.solver.set_points3d(points3d_n_cams[0])
-                    theta0 = self.functional_area.get_theta0(self.fio.index2name("obj", i_obj))
-                    print("theta0:", theta0)
+                    self.solver.set_points3d(points3d_n_cams)
+                    # _, r0, t0 = cv2.solvePnP(
+                    #     np.ascontiguousarray(points3d_n_cams[0][:,:3]).reshape((-1, 1, 3)), 
+                    #     np.ascontiguousarray(points2d_n_cams[0][:, :2]).reshape((-1, 1, 2)), 
+                    #     self.cams[0].intrin[:3, :3], 
+                    #     np.zeros(5), 
+                    #     flags=cv2.SOLVEPNP_EPNP
+                    # )     
+                    # theta0 = np.hstack((r0.flatten(), t0.flatten()))
+                    # np.array([-0.07499097,  0.0564026 , -0.80130748, -0.15415598,  0.15208027, -0.0339067 ])
+                    theta0 = self.functional_area.get_sub_tab_widget(i_obj).get_rtvec()
                     log   = self.solver.run(theta0)
                     theta = self.solver.opt.theta
                     
-                    theta = geometry.rtvec_rad2degree(theta)
-
+                    #array([ 3.84508410e+02, -2.65103155e+02,  1.91306264e+02, -7.07351854e-02, 5.49107848e-02,  4.32552633e-01])
                     self.fio.save_log(self.mode, self.i_scene, i_obj, log)
-                    self.fio.save_theta(i_obj, self.i_scene, theta)
-                    self.sig_solve_successed.connect(self.visualize_area.slot_accept_solve_result)
-                    self.sig_solve_successed.connect(self.functional_area.slot_accept_solve_result)
-                    self.sig_solve_successed.emit(i_obj, theta, cameras_pars)
+                    self.fio.save_theta(self.i_scene, i_obj, self.solver.opt.theta)
 
+                    self.objs[i_obj].pose = geometry.rtvec_to_pose(theta)
+                    for i_cam in range(n_cams):
+                        self.visualize_area.get_sub_dock_widget(i_cam).draw_all()
                     if self.debug:
                         print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_solve_successed.signal))
-                
+        else:
+            print("错误: 未选择功能.")
+        return
 
 
 if __name__ == "__main__":

@@ -6,12 +6,16 @@ from typing import Any, Dict, List
 
 import cv2
 import numpy as np
+import sys
 from matplotlib import pyplot as plt
+
+sys.path.append("..")
+from core  import Ellipse2d
 
 from . import FileIO, eps
 from . import geometry as geo
 from .Adam import Adam
-from .Visualizer import Visualizer
+from . import Visualizer
 
 
 class Conic2d(object):
@@ -88,7 +92,7 @@ class Conic2d(object):
             [u, v] = point2d
             A[idx, :] = np.array([u ** 2, u * v, v ** 2, u, v, 1])
         A[-1, :] = np.array([0, 0, 0, 0, 0, 1])
-        x = np.zeros(6, )
+        x = np.zeros(n_points + 1, )
         x[-1] = 1
         vec = np.linalg.lstsq(a=A, b=x, rcond=-1)[0]
         mat = self.__vec_to_mat(vec)
@@ -271,12 +275,44 @@ def d_iou(mask1, mask2):
     delta2 = box3[0] - box3[2]
     r_square = np.dot(delta2, delta2)
     
-    d_iou = m_iou(mask1, mask2) - d_square #/ r_square
+    d_iou = m_iou(mask1, mask2) #- d_square #/ r_square
 
     return d_iou
 
+def ellipse_loss_func(rtvec, args: List):
+    M = args[0]
+    points3d = args[1]
+    points2d_obj = args[2]
+    points2d_pro = geo.project_points3d_to_2d(rtvec, M, points3d)
+    C = Ellipse2d()
+    E = Ellipse2d()
+    C._set_by_5points2d(points2d_obj)
+    E._set_by_5points2d(points2d_pro)
+    
+    delta = (C.point2d_center - E.point2d_center)
+    
+    mask1 = np.zeros((1280*2, 800*2))
+    mask2 = np.zeros((1280*2, 800*2))
+    C.draw(mask1, thickness=-1)
+    E.draw(mask2, thickness=-1)
 
-def ellipse_loss_func(rtvec: np.ndarray, args: List):
+    # DEBUG
+    # debug1 = np.zeros((640, 480, 3))
+    # debug2 = np.zeros((640, 480, 3))
+    # C.draw(debug1, thickness=2, color=(0, 255, 0))
+    # E.draw(debug2, thickness=2, color=(255, 0, 0))
+    # cv2.namedWindow("DEBUG", flags=cv2.WINDOW_FREERATIO)
+    # cv2.imshow("DEBUG", debug1 + debug2)
+    # cv2.waitKey(1)
+    
+    #l2 = np.linalg.norm(points2d_pro[0] - points2d_obj[0])
+    #d = E.point2d_center - C.point2d_center
+    #d_square = np.dot(d, d.T)
+    loss = 1 - d_iou(mask1, mask2) #+ np.linalg.norm(d) #/ (d_square**0.5 + C.radius_u + E.radius_u)#+ l2 
+    return loss
+
+
+def ellipse_loss_func_multi(rtvec: np.ndarray, args: List):
     """
     rtvec, [mat_projection, points3d_project, points2d_object]
     points3d_project[0 ]: 顶点
@@ -284,31 +320,29 @@ def ellipse_loss_func(rtvec: np.ndarray, args: List):
     """
     Ms = args[0]
     points3d = args[1]
-    points2d_obj_for_all = args[2]
-    def loss_fuc(rtvec, M, points2d_obj):
-        points2d_pro = geo.project_points3d_to_2d(rtvec, M, points3d)
-        C = Conic2d()
-        E = Conic2d()
-        C._set_by_5points2d(points2d_obj[1:])
-        E._set_by_5points2d(points2d_pro[1:])
-        
-        delta = (C.point2d_center - E.point2d_center)
-        
-        mask1 = np.zeros((1280*2, 800*2))
-        mask2 = np.zeros((1280*2, 800*2))
-        C.draw(mask1, thickness=-1)
-        E.draw(mask2, thickness=-1)
-        
-        l2 = np.linalg.norm(points2d_pro[0] - points2d_obj[0])
-        loss = 1 - d_iou(mask1, mask2) + l2 
-        return loss
+    points2d_obj = args[2]
 
-    n_cams = 2
+    n_cams = len(Ms)
     loss_total = 0
     for i_cam in range(n_cams):
-        loss = loss_fuc(rtvec, Ms[i_cam], points2d_obj_for_all[i_cam])
+        loss = ellipse_loss_func(rtvec, [Ms[i_cam], points3d, points2d_obj[i_cam]])
         loss_total += loss
         
+        # DEBUG
+        debug1 = FileIO.imread("C:/Users/Li/Desktop/Pose6dSolver-pyqt/姿态测量/images_solve/cam_1/scene_2.png")
+        debug2 = FileIO.imread("C:/Users/Li/Desktop/Pose6dSolver-pyqt/姿态测量/images_solve/cam_2/scene_2.png")
+        Visualizer.draw_points2d([debug1, debug2][i_cam], points2d_obj[i_cam], radius=1)
+
+        C = Ellipse2d()
+        C._set_by_5points2d(points2d_obj[i_cam])
+        C.draw([debug1, debug2][i_cam], thickness=2, color=(0, 255, 0))
+        
+        E = Ellipse2d()
+        E._set_by_5points2d(geo.project_points3d_to_2d(rtvec, Ms[i_cam], points3d))
+        E.draw([debug1, debug2][i_cam], thickness=2, color=(255, 0, 0))
+        cv2.namedWindow("DEBUG{}".format(i_cam), flags=cv2.WINDOW_FREERATIO)
+        cv2.imshow("DEBUG{}".format(i_cam), [debug1, debug2][i_cam])
+        cv2.waitKey(1)
     return loss_total / n_cams
 
 def get_jacobian_matrix(params, func_objective, args_of_func_objective):
@@ -330,106 +364,4 @@ def get_jacobian_matrix(params, func_objective, args_of_func_objective):
         dl_of_dp = (loss_delta_p - loss_delta_n) / (2 * delta)
         J[idx_parm] = dl_of_dp
     return J
-
-
-
-def main(args, **k_args):
-    mode = "solve"
-
-    vis = Visualizer()
-
-    fio = FileIO.FileIO()
-    fio = k_args["fio"]
-
-    pth_points3d = args.load_model_points3d[0]
-    points3d = fio.load_points3d(pth_points3d)
-    
-
-    n_cams   = fio.file_structure[mode]["n_cams"]
-    n_senses = fio.file_structure[mode]["n_senses"]
-    dir_points2d  = fio.file_structure[mode]["dirs"]["points2d"]
-    dir_cameras   = fio.file_structure["calib"]["dirs"]["results"]
-    dir_images    = fio.file_structure[mode]["dirs"]["images"]
-    dir_logs      = fio.file_structure[mode]["dirs"]["logs"]
-    dir_results   = fio.file_structure[mode]["dirs"]["results"]
-    dir_visualize = fio.file_structure[mode]["dirs"]["visualize"]
-    names_subdir = fio.file_structure[mode]["names_subdir"]
-    suffix_image = fio.file_structure[mode]["suffix_image"]
-    
-    cameras_pars = []
-    Ms = []
-    for i_cam in range(n_cams):
-        name_subdir = names_subdir[i_cam]
-        pth_cameras = os.path.join(dir_cameras, name_subdir, "camera_pars.json")
-        camera_pars = fio.load_camera_pars(pth_cameras)
-        cameras_pars.append(camera_pars)
-        M = cameras_pars[i_cam]["intrin"] @ cameras_pars[i_cam]["extrin"]
-        Ms.append(M)
-
-
-    for i_sense in range(n_senses):
-        print("sense:\t{:d} / {:d}".format(i_sense + 1, n_senses))
-        pair = fio.file_structure[mode]["pairs"][i_sense]
-        points2d_of_n_cams = []
-        for i_cam in range(n_cams):
-            name_subdir = names_subdir[i_cam]
-            prefix_points2d = pair[i_cam]
-            pth_points2d = os.path.join(dir_points2d, name_subdir, prefix_points2d + ".txt")
-            points2d = fio.load_points2d(pth_points2d)
-            points2d_of_n_cams.append(points2d)
-
-        opt = Adam(100000, 0.001, 0.9, 0.999)
-        opt.set_objective_func(ellipse_loss_func)
-        opt.set_jacobian_func(get_jacobian_matrix)
-        res = opt.run(np.zeros(6),  Ms, points3d, points2d_of_n_cams)
-
-        
-        n_iters = res.shape[0]
-        x = np.arange(n_iters)
-        plt.plot(x, res[:, 0])
-        plt.draw()
-        
-        fio.save_log(dir_logs=dir_logs, prefix=str(i_sense), log=res)
-        fio.save_theta(dir_logs=dir_results, prefix=str(i_sense), log=opt.theta)
-        degree = opt.theta[:3] / np.pi * 180
-        print("theta=", opt.theta)
-        print("degree=", degree)
-        print()
-
-        for i_cam in range(n_cams):
-            pth_image = os.path.join(dir_images, names_subdir[i_cam], pair[i_cam] + suffix_image)
-            subdir_visualize = os.path.join(dir_visualize, names_subdir[i_cam])
-
-            img = cv2.imread(pth_image)
-            vis.draw(
-                mode=mode,
-                img=img, 
-                points2d=points2d_of_n_cams[i_cam], 
-                points3d=points3d, 
-                rtvec=opt.theta, 
-                camera_pars=cameras_pars[i_cam]
-            )
-            cv2.imshow("cam_" + str(i_cam + 1), img)
-            cv2.waitKey(100)
-            fio.save_image(
-                dir_image=subdir_visualize, 
-                prefix=pair[i_cam], 
-                img=img
-            ) 
-            if args.load_model3d:
-                pth_model = args.load_model3d[0]
-                model = fio.load_model_from_stl_binary(pth_model)
-                vis.draw_model3d(img, opt.theta, cameras_pars[i_cam], model)
-                cv2.imshow(str(i_cam), img)
-                cv2.waitKey(100)
-            fio.save_image(
-                dir_image=subdir_visualize, 
-                prefix=pair[i_cam] + "_with_model", 
-                img=img
-            ) 
-            
-    return
-
-            
-
 

@@ -1,5 +1,3 @@
-
-
 # -*- coding: utf-8 -*-
 
 # Form implementation generated from reading ui file 'c:\Users\Li\Desktop\Pose6dSolver-pyqt\ui_files\EditProject.ui'
@@ -159,6 +157,9 @@ class Ui_Form(object):
         self.pushbtn_add_points3d_solve = QtWidgets.QPushButton(self.groupbox_solve)
         self.pushbtn_add_points3d_solve.setObjectName("pushbtn_add_points3d_solve")
         self.layout_btns_solve.addWidget(self.pushbtn_add_points3d_solve)
+        self.pushbtn_add_lines_solve = QtWidgets.QPushButton(self.groupbox_solve)
+        self.pushbtn_add_lines_solve.setObjectName("pushbtn_add_lines_solve")
+        self.layout_btns_solve.addWidget(self.pushbtn_add_lines_solve)
         self.pushbtn_add_models_solve = QtWidgets.QPushButton(self.groupbox_solve)
         self.pushbtn_add_models_solve.setObjectName("pushbtn_add_models_solve")
         self.layout_btns_solve.addWidget(self.pushbtn_add_models_solve)
@@ -334,7 +335,8 @@ class Ui_Form(object):
         self.groupbox_solve.setTitle(_translate("Form", "测量:"))
         self.pushbtn_add_images_solve.setText(_translate("Form", "添加图像"))
         self.pushbtn_add_points3d_solve.setText(_translate("Form", "添加关键点"))
-        self.pushbtn_add_models_solve.setText(_translate("Form", "添加模型"))
+        self.pushbtn_add_lines_solve.setText(_translate("Form", "添加连线(可选)"))
+        self.pushbtn_add_models_solve.setText(_translate("Form", "添加模型(可选)"))
         self.label_num_cameras_solve.setText(_translate("Form", "相机数量:"))
         self.label_num_scenes_solve.setText(_translate("Form", "图像数量(单相机):"))
         self.label_num_points3d_solve.setText(_translate("Form", "关键点文件数量:"))
@@ -346,5 +348,4 @@ class Ui_Form(object):
         self.label_dir_result_solve.setText(_translate("Form", "测量输出路径:"))
         self.label_dir_visualize_solve.setText(_translate("Form", "可视化输出路径:"))
         self.label_dir_logs_solve.setText(_translate("Form", "记录输出路径:"))
-
 

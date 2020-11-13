@@ -25,7 +25,7 @@
   <widget class="QWidget" name="centralwidget">
    <layout class="QHBoxLayout" name="horizontalLayout1">
     <item>
-     <layout class="QGridLayout" name="gridLayout"/>
+     <layout class="QGridLayout" name="layout_main"/>
     </item>
    </layout>
   </widget>
@@ -42,58 +42,65 @@
     <property name="title">
      <string>文件</string>
     </property>
-    <addaction name="action1"/>
-    <addaction name="action1_2"/>
+    <addaction name="action_new_project"/>
+    <addaction name="action_open_project"/>
     <addaction name="separator"/>
-    <addaction name="action1_3"/>
+    <addaction name="action_edit_project"/>
+    <addaction name="separator"/>
+    <addaction name="action_settings"/>
    </widget>
    <widget class="QMenu" name="menu2">
     <property name="title">
      <string>功能</string>
     </property>
-    <addaction name="action2_1"/>
+    <addaction name="action_calib"/>
     <addaction name="separator"/>
-    <addaction name="actionss1"/>
+    <addaction name="action_solve"/>
    </widget>
    <widget class="QMenu" name="menu">
     <property name="title">
      <string>工具</string>
     </property>
-    <addaction name="actionfenge"/>
+    <addaction name="action_video2images"/>
    </widget>
    <addaction name="menu1"/>
    <addaction name="menu2"/>
    <addaction name="menu"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
-  <action name="action1">
+  <action name="action_new_project">
    <property name="text">
     <string>新建工程</string>
    </property>
   </action>
-  <action name="action1_2">
+  <action name="action_open_project">
    <property name="text">
     <string>打开工程</string>
    </property>
   </action>
-  <action name="action2_1">
+  <action name="action_calib">
    <property name="text">
     <string>标定</string>
    </property>
   </action>
-  <action name="action1_3">
+  <action name="action_edit_project">
    <property name="text">
-    <string>加载模型</string>
+    <string>编辑工程</string>
    </property>
   </action>
-  <action name="actionss1">
+  <action name="action_solve">
    <property name="text">
     <string>测量</string>
    </property>
   </action>
-  <action name="actionfenge">
+  <action name="action_video2images">
    <property name="text">
     <string>视频分割</string>
+   </property>
+  </action>
+  <action name="action_settings">
+   <property name="text">
+    <string>参数设置</string>
    </property>
   </action>
  </widget>

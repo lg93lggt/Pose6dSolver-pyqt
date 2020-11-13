@@ -367,9 +367,16 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="pushbtn_add_lines_solve">
+            <property name="text">
+             <string>添加连线(可选)</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="QPushButton" name="pushbtn_add_models_solve">
             <property name="text">
-             <string>添加模型</string>
+             <string>添加模型(可选)</string>
             </property>
            </widget>
           </item>

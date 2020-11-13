@@ -39,7 +39,7 @@ class ManualPoseWidget(QWidget, Ui_ManualPoseWidget.Ui_Form):
         QtCore.QMetaObject.connectSlotsByName(self)
         return
 
-    def get_rtvec(self):
+    def get_rtvec(self) -> np.ndarray:
         try:
             rx = float(self.double_spin_box_rx.value()) if (self.double_spin_box_rx.value() != "") else 0.
         except :

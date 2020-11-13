@@ -10,6 +10,12 @@
     <height>131</height>
    </rect>
   </property>
+  <property name="minimumSize">
+   <size>
+    <width>0</width>
+    <height>0</height>
+   </size>
+  </property>
   <property name="windowTitle">
    <string>Form</string>
   </property>
@@ -25,7 +31,7 @@
         </size>
        </property>
        <property name="text">
-        <string>平移向量(m):</string>
+        <string>平移(m):</string>
        </property>
       </widget>
      </item>
@@ -38,7 +44,7 @@
         </size>
        </property>
        <property name="text">
-        <string>旋转向量(degree)  :</string>
+        <string>旋转(rad)  :</string>
        </property>
       </widget>
      </item>

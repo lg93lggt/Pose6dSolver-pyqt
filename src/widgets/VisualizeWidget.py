@@ -61,14 +61,12 @@ class VisualizeWidget(QWidget, Ui_VisualizeWidget.Ui_Form):
             sub_dock_widget = DockGraphWidget.DockGraphWidget(self)
             sub_dock_widget.setObjectName(name_cam)
             sub_dock_widget.sig_choose_points2d_successed.connect(self.solt_send_message_to_main_widget)
-            self.sig_draw_calib_result.connect(sub_dock_widget.slot_draw_calib_result)
-            self.sig_draw_solve_result.connect(sub_dock_widget.slot_draw_solve_result)
             self.sub_dock_widgets.append(sub_dock_widget)
             self.layout.addWidget(sub_dock_widget, loc[0], loc[1])
             self.sub_dock_widgets[i_cam].groupbox_visualize.setTitle("相机{:d}".format(i_cam + 1))
         return
 
-    def get_sub_dock_widget(self, cam: str or int):
+    def get_sub_dock_widget(self, cam: str or int) -> DockGraphWidget.DockGraphWidget:
         if   isinstance(cam, int):
             cam = "cam_{}".format(cam + 1) 
             return self.findChild( DockGraphWidget.DockGraphWidget, cam)
@@ -114,7 +112,7 @@ class VisualizeWidget(QWidget, Ui_VisualizeWidget.Ui_Form):
     def slot_send_new_retvec(self, name_obj: str, theta: np.ndarray):
         for i_cam in range(self.n_cams):
             sub_dock_widget = self.get_sub_dock_widget(i_cam)
-            sub_dock_widget.slot_draw_theta0(name_obj, i_cam, theta)
+            sub_dock_widget.draw_all()
 
 
 

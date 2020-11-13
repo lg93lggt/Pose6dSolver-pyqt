@@ -10,6 +10,7 @@ from PyQt5.QtCore    import *
 sys.path.append("..")
 from ui import Ui_NewProjectDialog
 from core import FileIO
+from widgets import MainWindow  
 
 
 
@@ -36,16 +37,17 @@ class NewProjectDialog(QDialog, Ui_NewProjectDialog.Ui_Dialog):
         if not os.path.exists(tmp_dir):
             self.dir_project = tmp_dir
             print("\n新建工程文件夹:")
-            self.sig_accepted.emit(self.dir_project)
+            self.parentWidget().fio.new_project(tmp_dir)
+        else:
+            print("\t工程文件夹已存在.")
 
-            if self.debug:
-                print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_accepted.signal))
-            return
+        if self.debug:
+            print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_accepted.signal))
+        return
 
     @pyqtSlot()
     def on_buttonBox_rejected(self): # 取消
-        print("\n取消.")
-        self.sig_rejected.emit()
+        print("\n取消新建工程.")
 
         if self.debug:
             print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_rejected.signal))

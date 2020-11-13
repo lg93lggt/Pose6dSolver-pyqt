@@ -9,5 +9,6 @@ __all__ = [
 	"Ui_NewProjectDialog",
 	"Ui_OpenProjectDialog",
 	"Ui_ScenesTableWidget",
+	"Ui_SettingsDialog",
 	"Ui_VisualizeWidget",
 ]

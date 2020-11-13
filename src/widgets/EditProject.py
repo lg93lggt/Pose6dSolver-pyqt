@@ -30,6 +30,7 @@ class EditProjectWidget(QDialog, Ui_EditProject.Ui_Form):
         self.pushbtn_add_images_solve.setObjectName("pushbtnAddImagesSolve")
         self.pushbtn_add_points3d_solve.setObjectName("pushbtnAddPoints3dSolve")
         self.pushbtn_add_models_solve.setObjectName("pushbtnAddModelsSolve")
+        self.pushbtn_add_lines_solve.setObjectName("pushbtnAddLinesSolve")
         self.dir_input_images_calib   = ""
         self.dir_input_images_solve   = ""
         self.dir_input_models_solve   = ""
@@ -37,18 +38,17 @@ class EditProjectWidget(QDialog, Ui_EditProject.Ui_Form):
         QtCore.QMetaObject.connectSlotsByName(self)
         return
 
-    def init_fio(self, fio):
-        self.fio = fio
-        self._update(fio)
+    def init_fio(self):
+        self._update(self.parentWidget().fio)
         return
 
     def _update(self, fio):
         self.line_dir_root.setText(fio.struct.dir_root)
-        self.line_dir_images_calib.setText( "images_claib")
-        self.line_dir_points2d_calib.setText( "points2d_claib")
-        self.line_dir_points3d_calib.setText( "points3d_claib")
-        self.line_dir_results_calib.setText( "results_claib")
-        self.line_dir_visualize_calib.setText( "visualize_claib")
+        self.line_dir_images_calib.setText("images_claib")
+        self.line_dir_points2d_calib.setText("points2d_claib")
+        self.line_dir_points3d_calib.setText("points3d_claib")
+        self.line_dir_results_calib.setText("results_claib")
+        self.line_dir_visualize_calib.setText("visualize_claib")
 
         self.line_dir_images_solve.setText("images_solve")
         self.line_dir_points2d_solve.setText("points2d_solve")
@@ -74,7 +74,6 @@ class EditProjectWidget(QDialog, Ui_EditProject.Ui_Form):
             self.line_unit_length_calib.setText("1")
 
         if int(fio.struct.solve.n_cams) > 0:
-            print(self.line_num_cameras_solve.objectName())
             self.line_num_cameras_solve.setText(str(fio.struct.solve.n_cams))
         else:
             self.line_num_cameras_solve.setText("0")
@@ -87,7 +86,7 @@ class EditProjectWidget(QDialog, Ui_EditProject.Ui_Form):
         if int(fio.struct.solve.n_objs) > 0:
             self.line_num_points3d_solve.setText(str(fio.struct.solve.n_objs))
         else:
-            self.line_num_scenes_solve.setText("0")
+            self.line_num_points3d_solve.setText("0")
 
         if int(fio.struct.solve.n_models) > 0:
             self.line_num_models_solve.setText(str(fio.struct.solve.n_models))
@@ -96,6 +95,7 @@ class EditProjectWidget(QDialog, Ui_EditProject.Ui_Form):
         return
     
     def closeEvent(self, evt: QCloseEvent):
+        self.parentWidget().fio.save_project()
         self.sig_widget_closed.emit()
 
         if self.debug:
@@ -104,10 +104,10 @@ class EditProjectWidget(QDialog, Ui_EditProject.Ui_Form):
 
     @pyqtSlot()
     def on_pushbtnAddImagesCalib_released(self):
-        dir_input_images_calib = QFileDialog.getExistingDirectory(self, "打开标定图像文件夹")
-        self.dir_input_images_calib = dir_input_images_calib
-        if dir_input_images_calib != "":
-            self.sig_choose_images_calib_successed.emit(dir_input_images_calib)
+        dir_folder = QFileDialog.getExistingDirectory(self, "打开标定图像文件夹")
+        if dir_folder != "":
+            self.parentWidget().fio.load_images_from_motherfolder_dir(dir_folder, mode="calib")
+            self._update(self.parentWidget().fio)
 
             if self.debug:
                 print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_choose_images_calib_successed.signal))
@@ -115,46 +115,58 @@ class EditProjectWidget(QDialog, Ui_EditProject.Ui_Form):
 
     @pyqtSlot()
     def on_pushbtnAddImagesSolve_clicked(self):
-        dir_input_images_solve = QFileDialog.getExistingDirectory(self, "打开测量图像文件夹")
-        self.dir_input_images_solve = dir_input_images_solve
-        if dir_input_images_solve != "":
-            self.sig_choose_images_solve_successed.emit(dir_input_images_solve)
-            print(dir_input_images_solve)
+        dir_folder = QFileDialog.getExistingDirectory(self, "打开测量图像文件夹")
+        if dir_folder != "":
+            self.parentWidget().fio.load_images_from_motherfolder_dir(dir_folder, mode="solve")
+            self._update(self.parentWidget().fio)
 
             if self.debug:
                 print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_widget_closed.signal))
 
     @pyqtSlot()
     def on_pushbtnAddPoints3dSolve_clicked(self):
-        dir_input_points3d_solve = QFileDialog.getExistingDirectory(self, "打开关键点文件夹")
-        self.dir_input_points3d_solve = dir_input_points3d_solve
-        if dir_input_points3d_solve != "":
-            self.sig_choose_points3d_solve_successed.emit(dir_input_points3d_solve)
-            print(dir_input_points3d_solve)
+        dir_folder = QFileDialog.getExistingDirectory(self, "打开关键点文件夹")
+        if dir_folder != "":
+            self.parentWidget().fio.load_points3d_from_motherfolder_dir(dir_folder, mode="solve")
+            self._update(self.parentWidget().fio)
+
+            if self.debug:
+                print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_widget_closed.signal))
+
+    @pyqtSlot()
+    def on_pushbtnAddLinesSolve_clicked(self):
+        dir_folder = QFileDialog.getExistingDirectory(self, "打开关键点连线文件夹")
+        if dir_folder != "":
+            self.parentWidget().fio.load_lines_from_motherfolder_dir(dir_folder, mode="solve")
+            self._update(self.parentWidget().fio)
 
             if self.debug:
                 print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_widget_closed.signal))
 
     @pyqtSlot()
     def on_pushbtnAddModelsSolve_clicked(self):
-        dir_input_models_solve = QFileDialog.getExistingDirectory(self, "打开模型文件夹")
-        self.dir_input_models_solve = dir_input_models_solve
-        if dir_input_models_solve != "":
-            self.sig_choose_models_solve_successed.emit(dir_input_models_solve)
-            print(dir_input_models_solve)
+        dir_folder = QFileDialog.getExistingDirectory(self, "打开模型文件夹")
+        if dir_folder != "":
+            self.parentWidget().fio.load_modeles_from_motherfolder_dir(dir_folder, mode="solve")
+            self._update(self.parentWidget().fio)
 
             if self.debug:
                 print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_widget_closed.signal))
         
-    @pyqtSlot(float)
+    @pyqtSlot()
     def on_line_unit_length_calib_editingFinished(self):
         unit_length = float(self.line_unit_length_calib.text())
         try:
             unit_length = float(self.line_unit_length_calib.text())
-            self.sig_unit_length_changed(unit_length)
-            print("设置标定架单位长度:\t".format(unit_length))
         except :
             print("类型错误, 应为数字!")
+        finally:
+            fio = self.parentWidget().fio
+            if unit_length != fio.struct.calib.unit_length:
+                fio.set_unit_length(unit_length)
+                fio.make_cube_calib()
+                print("\n更改标定架单位长度: {}".format(unit_length))
+                self._update(self.parentWidget().fio)
         return
 
 

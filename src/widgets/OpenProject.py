@@ -10,7 +10,6 @@ from PyQt5.QtCore    import *
 sys.path.append("..")
 from ui import Ui_OpenProjectDialog 
 
-
 class OpenProjectDialog(QDialog, Ui_OpenProjectDialog.Ui_Dialog):
     sig_accepted = pyqtSignal(str)
     sig_rejected = pyqtSignal()
@@ -19,7 +18,6 @@ class OpenProjectDialog(QDialog, Ui_OpenProjectDialog.Ui_Dialog):
         self.setupUi(self)
         self.debug = parent.debug if parent else True
         self.dir_project = ""
-        return
 
     @pyqtSlot()
     def on_toolButton_clicked(self) -> None:
@@ -33,15 +31,19 @@ class OpenProjectDialog(QDialog, Ui_OpenProjectDialog.Ui_Dialog):
         if os.path.exists(tmp_dir) and os.path.isdir(tmp_dir):
             pth_ini =  os.path.join(tmp_dir, "project.ini")
             if os.path.exists(pth_ini):
-                self.dir_project = tmp_dir
                 print("\n打开工程文件夹:\t", tmp_dir)
-                self.sig_accepted.emit(self.dir_project)
+                self.parentWidget().fio.load_project_from_filedir(tmp_dir)
+            else:
+                print("\n未找到ini配置文件:\t", tmp_dir)
+        else:
+            print("\n工程文件夹不存在:\t", tmp_dir)
 
             if self.debug:
                 print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_accepted.signal))
+
     @pyqtSlot()
     def on_buttonBox_rejected(self): # 取消
-        print("\n取消.")
+        print("\n取消打开工程.")
         self.sig_rejected.emit()
 
         if self.debug:

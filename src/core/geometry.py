@@ -23,11 +23,13 @@ def T_to_t(T: np.ndarray)-> np.ndarray:
     return tvec
 
 def t_to_T(tvec: np.ndarray)-> np.ndarray:
+    if tvec.size == 3:
+        tvec = tvec.flatten()
     T = np.eye(4)
     T[:3, 3] = tvec
     return T
 
-def RT_to_rt(RT: np.ndarray) -> np.ndarray:
+def pose_to_rtvec(RT: np.ndarray) -> np.ndarray:
     rtvec = np.zeros(6)
     R = np.eye(4)
     R[:3, :3] = RT[:3, :3]
@@ -36,6 +38,11 @@ def RT_to_rt(RT: np.ndarray) -> np.ndarray:
     rtvec[:3] = R_to_r(R)
     rtvec[3:] = T_to_t(T)
     return rtvec
+
+def rtvec_to_pose(rtvec: np.ndarray) -> np.ndarray:
+    R = r_to_R(rtvec[:3])
+    T = t_to_T(rtvec[3:])
+    return T @ R
 
 
 def rtvec_degree2rad(rtvec_degree: np.ndarray) -> np.ndarray:
@@ -225,7 +232,7 @@ def get_reprojection_error_multi(rtvec: np.ndarray, args):
     n_cams = len(points2d_object_n_cams)
     n_points = points3d.shape[0]
 
-    loss_multi_cams = np.zeros((2, n_points))
+    loss_multi_cams = np.zeros((n_cams, n_points))
     avg_loss = 0
     for i in range(n_cams):
         loss = get_reprojection_error(rtvec, [Ms[i], points3d, points2d_object_n_cams[i]])
