@@ -26,9 +26,9 @@ class SolverPoses6dDLT(object):
     def __init__(self, name_opt_method, **kwargs) -> None:
         avaliable_methods = {"Adam": Adam, "LM": LevenbergMarquardt}
         n_iters           = kwargs["n_iters"] if ("n_iters" in kwargs.keys()) else 10000
-        alpha             = kwargs["alpha"] if ("alpha" in kwargs.keys()) else 1E-3
-        beta1             = kwargs["beta1"] if ("beta1" in kwargs.keys()) else 0.9
-        beta2             = kwargs["beta2"] if ("beta2" in kwargs.keys()) else 0.99
+        alpha             = kwargs["alpha"]   if ("alpha"   in kwargs.keys()) else 1E-3
+        beta1             = kwargs["beta1"]   if ("beta1"   in kwargs.keys()) else 0.9
+        beta2             = kwargs["beta2"]   if ("beta2"   in kwargs.keys()) else 0.99
         if name_opt_method == "Adam":
             self.opt = avaliable_methods[name_opt_method](n_iters, alpha, beta1, beta2)
         if name_opt_method == "LM":
@@ -82,10 +82,6 @@ class SolverPoses6dDLT(object):
         [log_loss, log_theta] = self.opt.run(theta0, self.mats_projections_for_n_cams, self.points3d_of_n_cams[0], self.points2d_of_n_cams)
         log = np.hstack((np.array(log_theta), np.array(log_loss).reshape((-1, 1))))
         return log
-
-    def set_dir_output(self, dir_output: str="./"):
-        self.dir_output = dir_output
-        return
 
 def loss_func_mixture_multi(rtvec: np.ndarray, args):
     Ms = args[0]

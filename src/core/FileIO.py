@@ -472,7 +472,7 @@ class FileIO(object):
         if not os.path.exists(pth):
             print("错误: 文件不存在.\n")
         else:
-            poins2d = np.loadtxt(pth)
+            poins2d = load_numpy_txt(pth)
             ret     = True
             data    = poins2d.astype(np.int)
         return [ret, data]
@@ -587,6 +587,7 @@ class FileIO(object):
                 camera_pars.tvec = np.array(data.tvec)
             ret  = True
             data = camera_pars
+            print("打开:\t", pth)
         else:
             print("错误: 相机未标定.\n")
         return [ret, data]

@@ -22,14 +22,14 @@ def draw_heatmap(data,xlabels,ylabels):
                         ha="center", va="center", color="w")
     plt.show() 
 
-pth = "/home/veily/桌面/Pose6dSolver-pyqt/姿态测量4/test_cov/1_pt.csv"
-data = pd.read_csv(pth)
+pth = "C:/Users/Li/Desktop/Pose6dSolver-pyqt/姿态测量4/test_cov/cam0_pt0.txt"
+data = np.loadtxt(pth)
 
 
-a = data["angle"].to_numpy().reshape((5, 5)).T 
-u = data[" du"].to_numpy()
-v = data[" dv"].to_numpy()
+a = data[:, 0].reshape((9, 9)).T 
+u = data[0:, 1]
+v = data[0:, 2]
 
-draw_heatmap(a, np.arange(2, -3, -1), np.arange(2, -3, -1))
+draw_heatmap(a, np.arange(-4, 5, 1), np.arange(-4, 5, 1))
 
 print()

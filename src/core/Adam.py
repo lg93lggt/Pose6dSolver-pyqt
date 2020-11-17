@@ -1,4 +1,5 @@
 import math
+import time
 import numpy as np
 import cv2
 import json
@@ -32,16 +33,15 @@ class Adam(object):
         """
             x0, args_of_func_objective
         """
+        t0 = time.time()
         self.theta = x0
         loss = self.func_objective(self.theta, args_of_func_objective)
         log_loss = [loss]
         log_theta = [self.theta]
         
-        is_converged = False
-        print("\nAdam:")
-        for i in range(self.n_iters):
-            self.i_iters = i
-            t = i + 1
+        print("\nAdam:\tn_iters: {}\talpha: {}\t beta1: {}\t beta2: {}".format(self.n_iters, self.alpha, self.beta1, self.beta2))
+        for i_iter in range(self.n_iters):
+            t = i_iter + 1
             gt = self.func_jacobian(self.theta, self.func_objective, args_of_func_objective)
             self.m = self.beta1 * self.m + (1 - self.beta1) * gt
             self.v = self.beta2 * self.v + (1 - self.beta2) * (gt * gt)
@@ -53,19 +53,12 @@ class Adam(object):
             except :
                 continue
 
-            # is converged?
-            n_step = self.n_iters // 100
-            # cond = -1
-            if self.i_iters % n_step == 0:
-                # cond = np.std(np.array(log_loss[-n_step:]))
-                # is_converged = False
-                #print(self.alpha / (1 - self.beta1 ** t) * np.sqrt(1 - self.beta2 ** t))
-                print("iter {:0>4d}/{:0>4d}:\tloss: {:0>4f}".format(self.i_iters, self.n_iters, loss))
-                # print("iter {:0>4d}/{:0>4d}:\tloss: {:0>4f}\tstd_error: {:0>4f}".format(self.i_iters, self.n_iters, loss, cond))
-                #cond = (cond - np.min(cond)) / (np.max(cond) - np.min(cond))
-            # if ((0 < cond < 1E-4) and (loss < 2 ** 0.5)) and (not is_converged): #
-            #     is_converged = True
-            #     break
+            # 输出
+            n_step = self.n_iters // 100 
+            if i_iter % n_step == 0: 
+                t1 = time.time()
+                print("iter {:0>4d}/{:0>4d}:\tloss: {:0>4f}\ttime: {:0>4f}".format(i_iter, self.n_iters, loss, t1 - t0))
+                t0 = t1
  
             # logging
             log_loss.append(loss)
@@ -73,4 +66,5 @@ class Adam(object):
 
         idx = np.argmin(log_loss)
         self.theta = log_theta[idx]
+        self.loss  = log_loss[idx]
         return log_loss, log_theta

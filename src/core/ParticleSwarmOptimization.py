@@ -14,7 +14,7 @@ def test_func(x, args=None):
 class ParticleSwarmOptimization():
     def __init__(self, n_pops, n_dims, n_iters):
         #定义所需变量
-        self.w  = 0.9
+        self.w  = 0.999
         self.c1 = 2#学习因子
         self.c2 = 2
 
@@ -79,7 +79,7 @@ class ParticleSwarmOptimization():
 
     def run(self, *args_of_func_objective: List):
 
-        t0       = time.time()
+        t0 = time.time()
         log_loss = []
         self.init_population(args_of_func_objective)
         print("\nPSO:\tn_iters: {}\tw: {}\t c1: {}\t c2: {}".format(self.n_iters, self.w, self.c1, self.c2))
@@ -101,7 +101,6 @@ class ParticleSwarmOptimization():
             if i_iter % n_step == 0: 
                 t1 = time.time()
                 print("iter {:0>4d}/{:0>4d}:\tloss: {:0>4f}\ttime: {:0>4f}".format(i_iter, self.n_iters, self.loss, t1 - t0))
-                #print(self.func_objective(self.global_best, args_of_func_objective))
                 t0 = t1
         return log_loss
 

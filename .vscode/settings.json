@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/home/veily/miniconda3/envs/2k1v/bin/python",
+    "python.pythonPath": "C:\\Users\\Li\\.conda\\envs\\default\\python.exe",
     "python.testing.unittestArgs": [
         "-v",
         "-s",
