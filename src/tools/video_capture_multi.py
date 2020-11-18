@@ -8,12 +8,12 @@ if __name__ == '__main__':
     args = sys.argv
     dir_output = args[0]
 
-    n_cams = 3
+    n_cams = 2
     cam1 = cv2.VideoCapture(0)
-    cam2 = cv2.VideoCapture(4)
+    # cam2 = cv2.VideoCapture(4)
     cam3 = cv2.VideoCapture(2)
     
-    dir_output = "/home/veily/桌面/1138"
+    dir_output = "/home/veily/桌面/1777"
     dirs_output = []
     for i_cam in range(n_cams):
         dir_new = os.path.join(dir_output, str(i_cam+1))
@@ -24,19 +24,21 @@ if __name__ == '__main__':
     cnt = 0
     while True:
         ret1, img1 = cam1.read()
-        ret2, img2 = cam2.read()
+        # ret2, img2 = cam2.read()
         ret3, img3 = cam3.read()
-        ret4, cv_img1 = cv2.findChessboardCorners(img1, (9, 6), None)
-        ret5, cv_img2 = cv2.findChessboardCorners(img3, (9, 6), None)
-        if ret1 and ret2 and ret4 and ret5:
+        # ret4, cv_img1 = cv2.findChessboardCorners(img1, (11, 8), None)
+        # ret5, cv_img2 = cv2.findChessboardCorners(img3, (11, 8), None)
+        # if ret1 and ret3 and ret4 and ret5:
+        if ret1 and ret3:
             cv2.imshow("1", img1)
-            cv2.imshow("2", img2)
+            # cv2.imshow("2", img2)
             cv2.imshow("3", img3)
             key = cv2.waitKey(1)
 
             if key == ord("c"):
                 for i_cam in range(n_cams):
-                    img = [img1, img2, img3][i_cam]
+                    # img = [img1, img2, img3][i_cam]
+                    img = [img1, img3][i_cam]
                     pth_image = dirs_output[i_cam] + "/{:0>3d}_{:d}.png".format(cnt, i_cam)
                     cv2.imwrite(pth_image, img)
                     print(pth_image)

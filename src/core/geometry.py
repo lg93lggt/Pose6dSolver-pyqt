@@ -3,33 +3,49 @@ import json
 import math
 
 import cv2
+from easydict import EasyDict
 import numpy as np
 
 
 
 def R_to_r(R: np.ndarray)-> np.ndarray:
+    """
+        旋转矩阵转向量
+    """
     R_ = R[:3, :3]
     rvec = cv2.Rodrigues(R_)[0].flatten()
     return rvec
 
 def r_to_R(rvec: np.ndarray)-> np.ndarray:
+    """
+        旋转向量转矩阵
+    """
     R = np.eye(4)
     R_3x3 = cv2.Rodrigues(rvec)[0]
     R[:3,  :3] = R_3x3
     return R
 
 def T_to_t(T: np.ndarray)-> np.ndarray:
+    """
+        平移矩阵转向量
+    """
     tvec = T[:3, 3]
     return tvec
 
 def t_to_T(tvec: np.ndarray)-> np.ndarray:
+    """
+        平移向量转矩阵
+    """
     if tvec.size == 3:
         tvec = tvec.flatten()
     T = np.eye(4)
     T[:3, 3] = tvec
     return T
 
-def pose_to_rtvec(RT: np.ndarray) -> np.ndarray:
+def rtmat_to_rtvec(RT: np.ndarray) -> np.ndarray:
+    """
+        位姿矩阵转向量
+    """
     rtvec = np.zeros(6)
     R = np.eye(4)
     R[:3, :3] = RT[:3, :3]
@@ -39,23 +55,37 @@ def pose_to_rtvec(RT: np.ndarray) -> np.ndarray:
     rtvec[3:] = T_to_t(T)
     return rtvec
 
-def rtvec_to_pose(rtvec: np.ndarray) -> np.ndarray:
+def rtvec_to_rtmat(rtvec: np.ndarray) -> np.ndarray:
+    """
+        位姿向量转矩阵
+    """
+    rtvec = rtvec.reshape(6)
     R = r_to_R(rtvec[:3])
     T = t_to_T(rtvec[3:])
     return T @ R
 
 
 def rtvec_degree2rad(rtvec_degree: np.ndarray) -> np.ndarray:
+    """
+        rtvec角度转弧度
+    """
     rtvec_rad = rtvec_degree.copy()
     rtvec_rad[:3] = np.pi * (rtvec_rad[:3] / 180)
     return rtvec_rad
     
 def rtvec_rad2degree(rtvec_rad: np.ndarray) -> np.ndarray:
+    """
+        rtvec弧度转角度
+    """
     rtvec_degree = rtvec_rad.copy()
     rtvec_degree[:3] = 180 * (rtvec_degree[:3] / np.pi)
     return rtvec_degree
 
 def solve_projection_mat_3d_to_2d(points3d: np.ndarray, points2d: np.ndarray, method="svd")-> np.ndarray:
+    """
+        解3d-2d投影矩阵
+        SVD或OLS方法求解
+    """
     n_points3d = points3d.shape[0]
     n_points2d = points2d.shape[0]
     if n_points3d != n_points2d:
@@ -103,6 +133,10 @@ def solve_projection_mat_3d_to_2d(points3d: np.ndarray, points2d: np.ndarray, me
         raise TypeError
 
 def decompose_projection_mat(mat_projection: np.ndarray):
+    """
+        分解投影矩阵
+        公式法, 旋转矩阵不一定保证正交
+    """
     M_ = mat_projection
     m34 = 1 / np.linalg.norm(M_[2, :3])
     M = M_ * m34
@@ -143,6 +177,9 @@ def decompose_projection_mat(mat_projection: np.ndarray):
     return [mat_intrin, mat_extrin]
 
 def decompose_projection_mat_by_rq(mat_projection: np.ndarray):
+    """
+        RQ分解投影矩阵,旋转矩阵正交, 但内参skew因子不一定为0
+    """
     M = mat_projection
 
     mat_intrin = np.eye(4)
@@ -164,6 +201,9 @@ def decompose_projection_mat_by_rq(mat_projection: np.ndarray):
     return [mat_intrin, mat_extrin]
 
 def project_points3d_to_2d(rtvec: np.ndarray, mat_projection: np.ndarray, points3d: np.ndarray)-> np.ndarray:
+    """
+        将3d点投影至2d
+    """
     P = np.hstack((points3d, np.ones((points3d.shape[0], 1)))).T
     M = mat_projection
 
@@ -183,14 +223,14 @@ def project_points3d_to_2d(rtvec: np.ndarray, mat_projection: np.ndarray, points
     points2d = points2d.T
     return points2d
 
-def get_residual(rtvec: np.ndarray, args):
+def get_residual(rtvec: np.ndarray, **kwargs_of_func_objective):
     """
-    rtvec, [mat_projection, points3d, points2d_object]
+        计算残差 \n
+        rtvec, {mat_projection, points3d, points2d_object}
     """
-    M = args[0]
-    points3d = args[1]
-    points2d_object = args[2]
-    points2d_projected = project_points3d_to_2d(rtvec, M, points3d)
+    points2d_object = kwargs_of_func_objective["points2d_object"]
+
+    points2d_projected = project_points3d_to_2d(rtvec, mat_projection=kwargs_of_func_objective["mat_projection"], points3d=kwargs_of_func_objective["points3d"])
     residual = points2d_object - points2d_projected
     return residual
 
@@ -213,72 +253,80 @@ def get_residual(rtvec: np.ndarray, args):
 #         loss_multi_cams[i] = loss
 #     return residual
 
-def get_reprojection_error(rtvec: np.ndarray, args):
+def get_reprojection_error(rtvec: np.ndarray, **kwargs_of_func_objective):
     """
-    rtvec, [mat_projection, points3d, points2d_object]
+        计算投影误差 \n
+        rtvec, {mat_projection, points3d, points2d_object}
     """
-    delta = get_residual(rtvec, args)
+    delta = get_residual(rtvec, **kwargs_of_func_objective)
     loss = np.sqrt(np.diag(delta @ delta.T)) # L2
     return loss
 
-def get_reprojection_error_multi(rtvec: np.ndarray, args):
+def get_reprojection_error_multi(rtvec: np.ndarray, **kwargs_of_func_objective_multi):
     """
-    rtvec, [mats_projection_of_n_cams, points3d_for_all_cams, points2d_object_n_cams]
+        计算多相机投影误差 \n
+        rtvec, {mats_projection_of_n_cams, points3d_of_n_cams, points2d_of_n_cams}
     """
-    Ms = args[0]
-    points3d = args[1]
-    points2d_object_n_cams = args[2]
+    mats_projection_of_n_cams = kwargs_of_func_objective_multi["mats_projection_of_n_cams"]
+    points3d_n_cams           = kwargs_of_func_objective_multi["points3d_of_n_cams"]
+    points2d_object_n_cams    = kwargs_of_func_objective_multi["points2d_of_n_cams"]
 
     n_cams = len(points2d_object_n_cams)
-    n_points = points3d.shape[0]
+    n_points = points3d_n_cams[0].shape[0]
 
     loss_multi_cams = np.zeros((n_cams, n_points))
     avg_loss = 0
-    for i in range(n_cams):
-        loss = get_reprojection_error(rtvec, [Ms[i], points3d, points2d_object_n_cams[i]])
+    for i_cam in range(n_cams):
+        kwargs_single = EasyDict({})
+        kwargs_single.mat_projection  = mats_projection_of_n_cams[i_cam]
+        kwargs_single.points3d        = points3d_n_cams[i_cam]
+        kwargs_single.points2d_object = points2d_object_n_cams[i_cam]
+        loss = get_reprojection_error(rtvec, **kwargs_single)
         #print("cam", i, ":\t", loss)
         avg_loss += np.average(loss)
-        loss_multi_cams[i] = loss
+        loss_multi_cams[i_cam] = loss
     #print(np.average(loss_multi_cams))
     return np.average(loss_multi_cams)
 
-def get_jacobian_matrix(params, func_objective, args_of_func_objective):
+def get_jacobian_matrix(params, func_objective, **kwargs_of_func_objective):
     """
-    params, func_objective, args_of_func_objective:[mat_projection, points3d, points2d_object]
+        计算jacobian矩阵, 数值微分法 \n
+        params, func_objective, {mat_projection, points3d, points2d_object}
     """
     delta = 1E-6
     n_prams = params.shape[0]
-    n_objects = np.shape(args_of_func_objective[-1])[0]
     J = np.zeros(n_prams)
     for [idx_parm, param] in enumerate(params):
         params_delta_p = params.copy()
         params_delta_n = params.copy()
+
         params_delta_p[idx_parm] = param + delta
         params_delta_n[idx_parm] = param - delta
 
-        loss_delta_p = func_objective(params_delta_p, args_of_func_objective)
-        loss_delta_n = func_objective(params_delta_n, args_of_func_objective)
+        loss_delta_p = func_objective(params_delta_p, **kwargs_of_func_objective)
+        loss_delta_n = func_objective(params_delta_n, **kwargs_of_func_objective)
+
         dl_of_dp = (loss_delta_p - loss_delta_n) / (2 * delta)
         J[idx_parm] = dl_of_dp
-        return J
+    return J
 
-def get_jacobian_matrix_multi(params, func_objective, args):
+def get_jacobian_matrix_parallel(params, func_objective, **kwargs_of_func_objective):
     """
-    params, func_objective,  args_of_func_objective:[mats_projection_of_n_cams, points3d_for_all_cams, points2d_object_n_cams]
+        params, func_objective,  args_of_func_objective:[mats_projection_of_n_cams, points3d_for_all_cams, points2d_object_n_cams]
     """
     delta = 1E-8
     n_prams = params.shape[0]
-    n_points = np.shape(args[-1][0])[0]
     #n_cameras = len(args[1])
     J = np.zeros((n_prams))
     for [idx_parm, param] in enumerate(params):
         params_delta_p = params.copy()
         params_delta_n = params.copy()
+
         params_delta_p[idx_parm] = param + delta
         params_delta_n[idx_parm] = param - delta
 
-        loss_delta_p = func_objective(params_delta_p, args)
-        loss_delta_n = func_objective(params_delta_n, args)
+        loss_delta_p = func_objective(params_delta_p, **kwargs_of_func_objective)
+        loss_delta_n = func_objective(params_delta_n, **kwargs_of_func_objective)
 
         dl_of_dp = (loss_delta_p - loss_delta_n) / (2 * delta)
         J[idx_parm] = dl_of_dp

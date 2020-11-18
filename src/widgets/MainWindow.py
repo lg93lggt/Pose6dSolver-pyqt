@@ -237,7 +237,7 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
         for i_obj in range(n_objs):
             ret, theta = self.fio.load_theta(self.i_scene, i_obj)
             if ret:
-                self.objs[i_obj].pose = geometry.rtvec_to_pose(theta)
+                self.objs[i_obj].pose = geometry.rtvec_to_rtmat(theta)
             else:
                 self.objs[i_obj].pose = np.eye(4)
         for i_cam in range(n_cams):
@@ -316,7 +316,7 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
                         self.solver = SolverPoses6d.load_setttings(self.dialog_settings.settings.FLAGS_POINTS2D, self.dialog_settings.settings)
                     self.solver.set_cameras_pars(cams)
                     self.solver.set_points2d_of_n_cams(points2d_n_cams)    
-                    self.solver.set_points3d(points3d_n_cams)
+                    self.solver.set_points3d_of_n_cams(points3d_n_cams)
                     # _, r0, t0 = cv2.solvePnP(
                     #     np.ascontiguousarray(points3d_n_cams[0][:,:3]).reshape((-1, 1, 3)), 
                     #     np.ascontiguousarray(points2d_n_cams[0][:, :2]).reshape((-1, 1, 2)), 
@@ -334,7 +334,7 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
                     self.fio.save_log(self.mode, self.i_scene, i_obj, log)
                     self.fio.save_theta(self.i_scene, i_obj, self.solver.opt.theta)
 
-                    self.objs[i_obj].pose = geometry.rtvec_to_pose(theta)
+                    self.objs[i_obj].pose = geometry.rtvec_to_rtmat(theta)
                     for i_cam in range(n_cams):
                         self.visualize_area.get_sub_dock_widget(i_cam).draw_all()
                     if self.debug:

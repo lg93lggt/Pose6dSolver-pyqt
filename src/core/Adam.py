@@ -29,27 +29,27 @@ class Adam(object):
         self.func_jacobian = func_jacobian
         return    
 
-    def run(self, x0, *args_of_func_objective):
+    def run(self, x0, **kwargs_of_func_objective):
         """
-            x0, args_of_func_objective
+            x0, kwargs_of_func_objective
         """
         t0 = time.time()
         self.theta = x0
-        loss = self.func_objective(self.theta, args_of_func_objective)
+        loss = self.func_objective(self.theta, **kwargs_of_func_objective)
         log_loss = [loss]
         log_theta = [self.theta]
         
         print("\nAdam:\tn_iters: {}\talpha: {}\t beta1: {}\t beta2: {}".format(self.n_iters, self.alpha, self.beta1, self.beta2))
         for i_iter in range(self.n_iters):
             t = i_iter + 1
-            gt = self.func_jacobian(self.theta, self.func_objective, args_of_func_objective)
+            gt = self.func_jacobian(self.theta, self.func_objective, **kwargs_of_func_objective)
             self.m = self.beta1 * self.m + (1 - self.beta1) * gt
             self.v = self.beta2 * self.v + (1 - self.beta2) * (gt * gt)
             m_corrected = self.m / (1 - self.beta1 ** t)
             v_corrected = self.v / (1 - self.beta2 ** t)
             self.theta = self.theta - self.alpha * m_corrected / (np.sqrt(v_corrected) + self.eps)
             try:
-                loss = self.func_objective(self.theta, args_of_func_objective)
+                loss = self.func_objective(self.theta, **kwargs_of_func_objective)
             except :
                 continue
 

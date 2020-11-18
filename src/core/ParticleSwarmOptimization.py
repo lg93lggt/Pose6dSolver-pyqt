@@ -1,4 +1,4 @@
-from typing import List
+from typing import Dict, List
 import numpy as np
 import random
 import matplotlib.pyplot as plt
@@ -12,11 +12,11 @@ def test_func(x, args=None):
     return sum
 
 class ParticleSwarmOptimization():
-    def __init__(self, n_pops, n_dims, n_iters):
+    def __init__(self, n_pops=100, n_dims=6, n_iters=500, w=0.99, c1=2, c2=2):
         #定义所需变量
-        self.w  = 0.999
-        self.c1 = 2#学习因子
-        self.c2 = 2
+        self.w  = w
+        self.c1 = c1#学习因子
+        self.c2 = c2
 
         self.r1 = 0.6#超参数
         self.r2 = 0.3
@@ -45,13 +45,16 @@ class ParticleSwarmOptimization():
         return
 
     #初始化粒子群
-    def init_population(self, args_of_func_objective: List):
+    def init_population(self, **kwargs_of_func_objective: Dict):
+        """
+            {mats_projection_of_n_cams, points3d_of_n_cams, points2d_of_n_cams}
+        """
         for i in range(self.n_pops):
             for j in range(self.n_dims):
                 self.X[i][j] = self.lower_bound[j] + random.uniform(0, 1) * (self.upper_bound[j] - self.lower_bound[j]) #* np.array([1, 1, 1, 2*np.pi, 2*np.pi, 2*np.pi])
                 self.V[i][j] = random.uniform(0, 1) #* np.array([1, 1, 1, 2*np.pi, 2*np.pi, 2*np.pi])
             self.pop_best[i] = self.X[i]
-            loss_tmp = self.func_objective(self.X[i], args_of_func_objective)
+            loss_tmp = self.func_objective(self.X[i], **kwargs_of_func_objective)
             self.pop_loss[i] = loss_tmp
             if (loss_tmp < self.loss):
                 self.loss = loss_tmp
@@ -77,17 +80,19 @@ class ParticleSwarmOptimization():
                 self.X[j_pop][k_dim] = self.lower_bound[k_dim]
         return
 
-    def run(self, *args_of_func_objective: List):
-
+    def run(self, **kwargs_of_func_objective: Dict):
+        """
+            {mats_projection_of_n_cams, points3d_of_n_cams, points2d_of_n_cams}
+        """
         t0 = time.time()
         log_loss = []
-        self.init_population(args_of_func_objective)
-        print("\nPSO:\tn_iters: {}\tw: {}\t c1: {}\t c2: {}".format(self.n_iters, self.w, self.c1, self.c2))
+        self.init_population(**kwargs_of_func_objective)
+        print("\n" + "PSO:\t n_iters: {}\t w: {}\t c1: {}\t c2: {}".format(self.n_iters, self.w, self.c1, self.c2))
         for i_iter in range(self.n_iters):
 
             for j_pop in range(self.n_pops): # 更新gbest\pbest
                 self._update_pop(j_pop) # 更新参数
-                loss = self.func_objective(self.X[j_pop], args_of_func_objective)
+                loss = self.func_objective(self.X[j_pop], **kwargs_of_func_objective)
                 if (loss < self.pop_loss[j_pop]):  # 更新个体最优
                     self.pop_loss[j_pop] = loss.copy()
                     self.pop_best[j_pop] = self.X[j_pop].copy()
@@ -100,7 +105,7 @@ class ParticleSwarmOptimization():
             n_step = self.n_iters // 100 
             if i_iter % n_step == 0: 
                 t1 = time.time()
-                print("iter {:0>4d}/{:0>4d}:\tloss: {:0>4f}\ttime: {:0>4f}".format(i_iter, self.n_iters, self.loss, t1 - t0))
+                print("iter {:0>4d}/{:0>4d}:\t loss: {:.2f}\t time: {:0.2f}".format(i_iter, self.n_iters, self.loss, t1 - t0))
                 t0 = t1
         return log_loss
 
@@ -110,7 +115,7 @@ if __name__ == '__main__':
     pso_test.set_objective_func(test_func)
     pso_test.set_boundery(np.zeros(5), 10*np.ones(5))
     pso_test.set_boundery(lower_bound=-100*np.ones(5), upper_bound=100*np.ones(5))
-    fitness = pso_test.run()
+    fitness = pso_test.run(args=[1,2,3,4,6])
     plt.figure(1)
     plt.title("Figure1")
     plt.xlabel("iterators", size=14)

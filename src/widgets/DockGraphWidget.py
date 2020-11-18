@@ -14,7 +14,7 @@ sys.path.append("..")
 from ui import *
 from core import Visualizer, FileIO, geometry, Conic
 from widgets import TableWidget
-from core.geometry import pose_to_rtvec
+from core.geometry import rtmat_to_rtvec
 
 
 class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
@@ -242,7 +242,7 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
     def draw_obj(self, name_obj: str, i_cam: int):
         i_obj = int(name_obj.split("_")[1]) - 1
         # theta = geometry.rtvec_degree2rad(theta)
-        theta = pose_to_rtvec(self.window().objs[i_obj].pose)
+        theta = rtmat_to_rtvec(self.window().objs[i_obj].pose)
         if self.objectName() == "cam_{:d}".format(i_cam + 1):
             self.img_modify = self.img_raw.copy()
             points2d    = self.window().objs[i_obj].views[i_cam].points2d
@@ -428,7 +428,7 @@ class DockGraphWidget(QWidget, Ui_DockGraphWidget.Ui_Form):
                 self.window().objs[i_obj].pose = tmp_pose @ geometry.t_to_T(np.array([0, 0,  step_t]))
             if evt.text() == "j":
                 self.window().objs[i_obj].pose = tmp_pose @ geometry.t_to_T(np.array([0, 0, -step_t]))
-            rtvec = geometry.pose_to_rtvec(self.window().objs[i_obj].pose)
+            rtvec = geometry.rtmat_to_rtvec(self.window().objs[i_obj].pose)
             self.window().functional_area.tab_widget_objs.setCurrentIndex(i_obj)
             self.window().functional_area.get_sub_tab_widget(i_obj).set_rtvec(rtvec)
         return

@@ -15,8 +15,8 @@ fio.load_project_from_filedir("./姿态测量4")
 ts = np.zeros(11)
 
 def get_angle(vec1, vec2, rtvec1=np.zeros(6), rtvec2=np.zeros(6)):
-    pose1 = geo.rtvec_to_pose(rtvec1)
-    pose2 = geo.rtvec_to_pose(rtvec2)
+    pose1 = geo.rtvec_to_rtmat(rtvec1)
+    pose2 = geo.rtvec_to_rtmat(rtvec2)
 
     vec1_ = (pose1 @ vec1.T).T
     vec2_ = (pose2 @ vec2.T).T
@@ -48,7 +48,7 @@ def get_angle(vec1, vec2, rtvec1=np.zeros(6), rtvec2=np.zeros(6)):
 #     ts[i_scene] = t
 #     print(t)
 def show(theta):
-    pose = geo.rtvec_to_pose(theta)
+    pose = geo.rtvec_to_rtmat(theta)
     p3d1 = np.array([
         [0, 0, 0, 1],
         [0, 0, 0.3, 1]
@@ -107,7 +107,7 @@ for i_cam in range(2):
     _, idxs= fio.load_indexes3d(mode, i_scene, 0, i_cam)
 
     cams.append(cam)
-    p2ds.append(p2d)
+    p2ds.append(p2d.astype(np.float))
     p3ds.append(p3d[idxs])
 solver = SolverPoses6d.SolverPoses6dDLT("Adam", n_iter=10000, alpha=0.001, beta1=0.9, beta2=0.999)
 
@@ -126,51 +126,97 @@ p2ds_ = copy.deepcopy(p2ds)
 # 点 3:    [154 274]
 # 点 4:    [171 317] 
 _, x0 = fio.load_theta(i_scene, 0)
+
+# ------------------------- 单点偏移----------------------------- 
+# for i_cam in range(2):
+#     print(i_cam, " / 2")
+#     for i_pt in range(4):
+#         if i_cam==0 and i_pt==0: 
+#             continue
+
+#         print(i_pt, " / 4")
+#         p2ds_ = copy.deepcopy(p2ds)
+#         data = np.zeros((dudv.shape[0], 4))
+#         for i_delta in range(dudv.shape[0]):
+#             print(i_delta, " / ", dudv.shape[0])
+#             p2ds_[i_cam][i_pt] = p2ds[i_cam][i_pt] + dudv[i_delta]
+#             print(p2ds_[i_cam])
+
+#             solver.set_cameras_pars(cams)
+#             solver.set_points2d_of_n_cams(p2ds_)    
+#             solver.set_points3d(p3ds)
+
+#             n_tries = 1
+#             while 1:
+#                 n_tries += 1
+#                 solver.run()
+#                 n_tries = 1
+#                 if solver.opt.loss < 3:
+#                     x0 = solver.opt.theta
+#                     v1 = np.array([0, 0, 0.3, 0])
+#                     v2 = np.array([0, 0.2, 0, 0])
+#                     angle = get_angle(v1, v2, solver.opt.theta)
+#                     show(solver.opt.theta)
+#                     data[i_delta, 0] = angle
+#                     data[i_delta, 1:3] = dudv[i_delta].copy()
+#                     data[i_delta, -1] = solver.opt.loss
+#                     break
+#                 elif n_tries == 10:
+#                     x0 = solver.opt.theta
+#                     v1 = np.array([0, 0, 0.3, 0])
+#                     v2 = np.array([0, 0.2, 0, 0])
+#                     angle = get_angle(v1, v2, solver.opt.theta)
+#                     show(solver.opt.theta)
+#                     data[i_delta, 0] = angle
+#                     data[i_delta, 1:3] = dudv[i_delta].copy()
+#                     data[i_delta, -1] = solver.opt.loss
+#                     break
+
+#             #print()
+#         print()
+#         np.savetxt("C:/Users/Li/Desktop/Pose6dSolver-pyqt/姿态测量4/test_cov/cam{}_pt{}.txt".format(i_cam, i_pt), data, fmt="%.2f")
+
+
+# ------------------------- 整体偏移----------------------------- 
 for i_cam in range(2):
     print(i_cam, " / 2")
-    for i_pt in range(4):
-        if i_cam==0 and i_pt==0: 
-            continue
+    p2ds_ = copy.deepcopy(p2ds)
+    data = np.zeros((dudv.shape[0], 4))
+    for i_delta in range(dudv.shape[0]):
+        print(i_delta, " / ", dudv.shape[0])
 
-        print(i_pt, " / 4")
-        p2ds_ = copy.deepcopy(p2ds)
-        data = np.zeros((dudv.shape[0], 4))
-        for i_delta in range(dudv.shape[0]):
-            print(i_delta, " / ", dudv.shape[0])
-            p2ds_[i_cam][i_pt] = p2ds[i_cam][i_pt] + dudv[i_delta]
-            print(p2ds_[i_cam])
+        p2ds_[i_cam]  += dudv[i_delta]
 
-            solver.set_cameras_pars(cams)
-            solver.set_points2d_of_n_cams(p2ds_)    
-            solver.set_points3d(p3ds)
+        solver.set_cameras_pars(cams)
+        solver.set_points2d_of_n_cams(p2ds_)    
+        solver.set_points3d_of_n_cams(p3ds)
 
-            n_tries = 1
-            while 1:
-                n_tries += 1
-                solver.run()
-                n_tries = 1
-                if solver.opt.loss < 3:
-                    x0 = solver.opt.theta
-                    v1 = np.array([0, 0, 0.3, 0])
-                    v2 = np.array([0, 0.2, 0, 0])
-                    angle = get_angle(v1, v2, solver.opt.theta)
-                    show(solver.opt.theta)
-                    data[i_delta, 0] = angle
-                    data[i_delta, 1:3] = dudv[i_delta].copy()
-                    data[i_delta, -1] = solver.opt.loss
-                    break
-                elif n_tries == 10:
-                    x0 = solver.opt.theta
-                    v1 = np.array([0, 0, 0.3, 0])
-                    v2 = np.array([0, 0.2, 0, 0])
-                    angle = get_angle(v1, v2, solver.opt.theta)
-                    show(solver.opt.theta)
-                    data[i_delta, 0] = angle
-                    data[i_delta, 1:3] = dudv[i_delta].copy()
-                    data[i_delta, -1] = solver.opt.loss
-                    break
+        n_tries = 1
+        while 1:
+            n_tries += 1
+            solver.run()
+            if solver.opt.loss < 5:
+                x0 = solver.opt.theta
+                v1 = np.array([0, 0, 0.3, 0])
+                v2 = np.array([0, 0.2, 0, 0])
+                angle = get_angle(v1, v2, solver.opt.theta)
+                show(solver.opt.theta)
+                data[i_delta, 0] = angle
+                data[i_delta, 1:3] = dudv[i_delta].copy()
+                data[i_delta, -1] = solver.opt.loss
+                break
+            elif n_tries == 3:
+                x0 = solver.opt.theta
+                v1 = np.array([0, 0, 0.3, 0])
+                v2 = np.array([0, 0.2, 0, 0])
+                angle = get_angle(v1, v2, solver.opt.theta)
+                show(solver.opt.theta)
+                data[i_delta, 0] = angle
+                data[i_delta, 1:3] = dudv[i_delta].copy()
+                data[i_delta, -1] = solver.opt.loss
+                break
 
-            #print()
+            print()
         print()
-        np.savetxt("C:/Users/Li/Desktop/Pose6dSolver-pyqt/姿态测量4/test_cov/cam{}_pt{}.txt".format(i_cam, i_pt), data, fmt="%.2f")
+    np.savetxt("./姿态测量4/test_cov/cam{}_ptall.txt".format(i_cam), data, fmt="%.2f")
 

@@ -9,9 +9,10 @@
             "type": "python",
             "request": "launch",
             "program": "${file}",
-            "console": "integratedTerminal",
+            "console": "internalConsole",
             "cwd": "${workspaceFolder}"
         },
+        //"${fileDirname}"
         {
             "name": "Main",
             "type": "python",

@@ -9,7 +9,8 @@ import copy
 import cv2
 import numpy as np
 import shutil   
-import argparse 
+
+
 
 def copy_file(pth_src: str, pth_dst: str) -> None:
     [dir_file, prefix, suffix] = split_path(pth_dst)
@@ -205,7 +206,24 @@ class FileIO(object):
         self.make_dirs()
         self.make_cube_calib()
         return
-        
+       
+    def load_project_from_filedir(self, project_folder_pth: str="./姿态测量"):
+        self.struct.dir_root = os.path.abspath(project_folder_pth)
+        pth_project_ini = os.path.join(self.struct.dir_root, "project.ini") 
+        if not os.path.exists(pth_project_ini):
+            raise IOError("未找到 project.ini !")     
+        with open(pth_project_ini, encoding="utf-8") as fp:
+            print("加载: ", pth_project_ini)
+            self.struct = EasyDict(json.loads(fp.read()))
+        return self.struct
+ 
+    def save_project(self):
+        pth_project_ini = os.path.join(self.struct.dir_root, "project.ini")
+        with open(pth_project_ini, "w", encoding="utf-8") as fp:
+            json.dump(self.struct, fp, indent=4, ensure_ascii=False)
+            print("\n保存工程配置文件.")
+        return
+
     def make_dirs(self):
         for mode in ["calib", "solve"]:
             for name_dir in self.dir_lv1:
@@ -258,22 +276,6 @@ class FileIO(object):
             print("\n生成标定架骨架:")
             save_numpy_txt(pth, lines_cube, format="%d")
         return
-
-    def save_project(self):
-        pth_project_ini = os.path.join(self.struct.dir_root, "project.ini")
-        with open(pth_project_ini, "w", encoding="utf-8") as fp:
-            json.dump(self.struct, fp, indent=4, ensure_ascii=False)
-            print("\n保存工程配置文件.")
-        return
-
-    def load_project_from_filedir(self, project_folder_pth: str="./姿态测量"):
-        self.struct.dir_root = os.path.abspath(project_folder_pth)
-        pth_project_ini = os.path.join(self.struct.dir_root, "project.ini") 
-        if not os.path.exists(pth_project_ini):
-            raise IOError("未找到 project.ini !")     
-        with open(pth_project_ini, encoding="utf-8") as fp:
-            self.struct = EasyDict(json.loads(fp.read()))
-        return self.struct
 
     def _update(self):
         self.match_pairs("calib")
@@ -486,11 +488,11 @@ class FileIO(object):
                 "points3d_" + mode,
                 obj  + ".txt"
             )
+        print("加载 物体{} 3D关键点:".format(name2index(obj) + 1), pth)
         if not os.path.exists(pth):
             print("错误: 文件不存在.\n")
              
         else:
-            print("加载 物体{} 3D关键点:".format(name2index(obj) + 1))
             ret  = True
             data = load_numpy_txt(pth)
         return [ret, data]

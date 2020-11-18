@@ -1,4 +1,10 @@
 /1111
 /build
 /dist
-/test.spec
+/test.spec/*
+/.vscode/*
+/.idea/*
+/.pytest_cache/*
+/src/.vscode/*
+/src/*/__pycache__/*
+src/core/__pycache__/*
