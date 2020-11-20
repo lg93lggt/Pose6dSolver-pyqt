@@ -42,6 +42,8 @@ class SettingsDialog(QDialog, Ui_SettingsDialog.Ui_Dialog):
         self.accepted.connect(self.save_settings)
         # 激活pyqtSlot装饰器
         QtCore.QMetaObject.connectSlotsByName(self)
+
+        print("\n" + "*"*10 + " 参数设置" + "*"*10)
         self.load_settings()
         return
 
@@ -86,15 +88,15 @@ class SettingsDialog(QDialog, Ui_SettingsDialog.Ui_Dialog):
         self.spinbox_c2_pso.setValue(self.settings.hyper_params_pso.c2) 
         return
 
-    def save_settings(self, pth="../../settings.ini"):
+    def save_settings(self, pth="./settings.ini"):
         if self.rbtn_manual.isChecked():
             self.settings.FLAGS_THETA0 = FLAGS_THETA0.MAMUAL.value
         if self.rbtn_pso.isChecked():
-            self.settings.FLAGS_THETA0 = FLAGS_THETA0.MAMUAL.value
+            self.settings.FLAGS_THETA0 = FLAGS_THETA0.PSO.value
         if self.rbtn_epnp.isChecked():
-            self.settings.FLAGS_THETA0 = FLAGS_THETA0.MAMUAL.value
+            self.settings.FLAGS_THETA0 = FLAGS_THETA0.EPNP.value
         if self.rbtn_none.isChecked():
-            self.settings.FLAGS_THETA0 = FLAGS_THETA0.MAMUAL.value
+            self.settings.FLAGS_THETA0 = FLAGS_THETA0.NONE.value
 
         if self.rbtn_adam.isChecked():
             self.settings.FLAGS_OPT = FLAGS_OPT.ADAM.value

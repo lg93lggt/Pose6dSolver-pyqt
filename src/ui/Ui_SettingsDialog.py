@@ -182,6 +182,7 @@ class Ui_Dialog(object):
         self.spinbox_niters_pso.setObjectName("spinbox_niters_pso")
         self.gridLayout_4.addWidget(self.spinbox_niters_pso, 0, 1, 1, 1)
         self.spinbox_npops_pso = QtWidgets.QSpinBox(self.groupbox_hperparams_pso)
+        self.spinbox_niters_pso.setMaximum(1000)
         self.spinbox_npops_pso.setObjectName("spinbox_npops_pso")
         self.gridLayout_4.addWidget(self.spinbox_npops_pso, 1, 1, 1, 1)
         self.verticalLayout.addWidget(self.groupbox_hperparams_pso)

@@ -107,25 +107,15 @@ class FunctionalWidget(QWidget, Ui_FunctionalWidget.Ui_Form):
         return
 
     @pyqtSlot()
-    def on_btn_run_clicked(self):
-        print("开始解算:")
-        self.sig_btn_run_clicked.emit()
-
-        if self.debug:
-            print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_btn_run_clicked.signal))
-        pass
-
-    @pyqtSlot()
     def on_btn_save_clicked(self):
-        print("保存:")
+        print("保存图片:")
         # for i_obj in range(self.n_objs):
         #     rtvec = self.get_sub_tab_widget(i_obj).get_rtvec()
         #     self.window().fio.save_theta(i_obj, self.window().i_scene, rtvec)
         for i_cam in range(len(self.window().cams)):
             dock_widget = self.window().visualize_area.get_sub_dock_widget(i_cam)
             dock_widget.slot_save_image()
-        if self.debug:
-            print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_btn_run_clicked.signal))
+            
         pass
 
 

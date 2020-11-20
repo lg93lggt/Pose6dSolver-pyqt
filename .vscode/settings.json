@@ -1,5 +1,5 @@
 {
-    "python.pythonPath": "/home/veily/miniconda3/envs/2k1v/bin/python",
+    "python.pythonPath": "/home/veily/miniconda3/envs/nue/bin/python",
     "python.testing.unittestArgs": [
         "-v",
         "-s",

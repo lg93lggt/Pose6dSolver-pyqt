@@ -24,18 +24,17 @@ from core import Conic
 
 
 class SolverPoses6dDLT(object):
-    def __init__(self, name_opt_method, **kwargs) -> None:
+    def __init__(self, method: str, **kwargs) -> None:
         avaliable_methods = {"Adam": Adam, "LM": LevenbergMarquardt}
         n_iters           = kwargs["n_iters"] if ("n_iters" in kwargs.keys()) else 10000
         alpha             = kwargs["alpha"]   if ("alpha"   in kwargs.keys()) else 1E-3
         beta1             = kwargs["beta1"]   if ("beta1"   in kwargs.keys()) else 0.9
         beta2             = kwargs["beta2"]   if ("beta2"   in kwargs.keys()) else 0.99
-        if name_opt_method == "Adam":
-            self.opt = avaliable_methods[name_opt_method](n_iters, alpha, beta1, beta2)
-        if name_opt_method == "LM":
-            self.opt = avaliable_methods[name_opt_method](n_iters, alpha)
+        if method == "Adam":
+            self.opt = avaliable_methods[method](n_iters, alpha, beta1, beta2)
+        if method == "LM":
+            self.opt = avaliable_methods[method](n_iters, alpha)
             alpha = kwargs["alpha"] if ("alpha" in kwargs.keys()) else 1E-3
-        self.pso = ParticleSwarmOptimization(100, 6, 500)
         return
 
     # def set_opt_hyper_params(self, **kwargs):
@@ -62,7 +61,24 @@ class SolverPoses6dDLT(object):
         self.points2d_of_n_cams = points2d_of_n_cams
         return
 
-    def run(self, theta0=np.zeros(6), **kwargs_fun_objective_multi):  
+    def run(self, theta0=np.zeros(6), **kwargs_run):          
+        cams = kwargs_run["cameras"] if ("cameras" in kwargs_run.keys()) else None
+        points3d_of_n_cams = kwargs_run["points3d_of_n_cams"] if ("points3d_of_n_cams" in kwargs_run.keys()) else None
+        points2d_of_n_cams = kwargs_run["points2d_of_n_cams"] if ("points2d_of_n_cams" in kwargs_run.keys()) else None
+
+        if (cams is None) or (points3d_of_n_cams is None) or (points2d_of_n_cams is None):
+            raise ValueError("错误: 输入参数名称错误.")
+
+        mats_projection_of_n_cams = []
+        for cam in cams:
+            mats_projection_of_n_cams.append(cam.intrin @ cam.extrin)
+
+        kwargs_fun_objective_multi = {
+            "mats_projection_of_n_cams": mats_projection_of_n_cams,
+            "points3d_of_n_cams": points3d_of_n_cams,
+            "points2d_of_n_cams": points2d_of_n_cams
+        }
+        
         self.opt.set_objective_func(geo.get_reprojection_error_multi)
         self.opt.set_jacobian_func(geo.get_jacobian_matrix)
         [log_loss, log_theta] = self.opt.run(theta0, **kwargs_fun_objective_multi)

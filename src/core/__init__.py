@@ -6,7 +6,7 @@ __all__ = [
 	"Ellipse2d",
 	"Conic",
 	"eps",
-	"eval",
+	"InitializerPose6d",
 	"FileIO",
 	"geometry",
 	"imgFilter",

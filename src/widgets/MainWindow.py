@@ -3,29 +3,28 @@
 
 import os
 import sys
+import numpy as np
 import cv2
+from easydict import EasyDict
 from  typing import *
 
 from PyQt5 import QtWidgets, QtGui, QtCore
 from PyQt5.QtWidgets import *
 from PyQt5.QtGui     import *
 from PyQt5.QtCore    import *
-import numpy as np
-from easydict import EasyDict
 
 
 sys.path.append("..")
 from ui import *
 from core import *
+from core.SolverPoses6d import SolverPoses6dDLT
+from core import InitializerPose6d
 from widgets import DockGraphWidget, EditProject, FunctionalWidget, ManualPoseWidget, NewProject, OpenProject, TableWidget, VisualizeWidget, SettingsDialog
-from slot import * 
+from widgets.SettingsDialog import FLAGS_CALIB, FLAGS_THETA0, FLAGS_OPT, FLAGS_POINTS2D 
 
 
 class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
-    sig_mode_calib_activated = pyqtSignal(str)
-    sig_mode_solve_activated = pyqtSignal(str)
-    sig_calibrate_successed  = pyqtSignal(int, dict)
-    sig_solve_successed      = pyqtSignal(int, np.ndarray, list)
+    
 
     def debug(function):
         print("[DEBUG]: run func: {}()".format(function.__name__))
@@ -144,8 +143,6 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
 
         self.slot_init_widgets()
 
-        if self.debug:
-            print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_mode_calib_activated.signal))
         return
 
     # 测量-------------------------------------------------------------------#
@@ -157,9 +154,6 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
 
         self.slot_init_widgets()
         self.functional_area.sig_rtvec_changed.connect(self.visualize_area.slot_send_new_retvec)
-
-        if self.debug:
-            print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_mode_solve_activated.signal))
         return
 
     
@@ -260,6 +254,7 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
     
     def slot_run_with_mode(self):
         if self.mode == "calib":
+            print("\n" + "*"*10 + " 解算相机参数 " + "*"*10)
             n_cams = self.fio.struct[self.mode].n_cams
             n_objs = self.fio.struct[self.mode].n_objs
             n_scenes = self.fio.struct[self.mode].n_scenes
@@ -281,64 +276,78 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
                     print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_calibrate_successed.signal))
 
         elif self.mode == "solve":
+            print("\n" + "*"*10 + " 解算姿态 " + "*"*10)
             n_cams = self.fio.struct[self.mode].n_cams
             n_objs = self.fio.struct[self.mode].n_objs
             n_scenes = self.fio.struct[self.mode].n_scenes
 
             is_data_ready = False
-            for i_obj in range(n_objs):
-                print("物体: {} / {}".format(i_obj + 1, n_objs))
-                points3d = self.objs[i_obj].points3d
-                points2d_n_cams = []
-                points3d_n_cams = []
-                cams            = []
-                for i_cam in range(n_cams):
-                    points2d  = self.objs[i_obj].views[i_cam].points2d
-                    indexes3d = self.objs[i_obj].views[i_cam].indexes3d
-                    if (points2d is  None) or (indexes3d is None):
-                        print("物体未选择, 跳过.".format(i_obj + 1))
-                        continue
+            #for i_obj in range(n_objs):
+            i_obj = self.functional_area.tab_widget_objs.currentIndex()
+            print("物体: {} / {}".format(i_obj + 1, n_objs))
+            points3d = self.objs[i_obj].points3d
+            points2d_n_cams = []
+            points3d_n_cams = []
+            cams            = []
+            for i_cam in range(n_cams):
+                points2d  = self.objs[i_obj].views[i_cam].points2d
+                indexes3d = self.objs[i_obj].views[i_cam].indexes3d
+                if (points2d is  None) or (indexes3d is None):
+                    print("相机{}/{} 未选择, 跳过.".format(i_cam + 1, n_cams))
+                    continue
+                else:
+                    print("相机{}/{} 选择.".format(i_cam + 1, n_cams))
+                    cams.append(self.cams[i_cam])
+                    points2d_n_cams.append(points2d.astype(float))
+                    points3d_n_cams.append(points3d[indexes3d])
+                    is_data_ready = True
+
+            if is_data_ready:
+                kwargs_data                    = EasyDict({})
+                kwargs_data.cameras            = cams
+                kwargs_data.points2d_of_n_cams = points2d_n_cams
+                kwargs_data.points3d_of_n_cams = points3d_n_cams
+                
+                if   self.dialog_settings.settings.FLAGS_POINTS2D == FLAGS_POINTS2D.ELLIPSE.value:
+                    if i_obj == 0:
+                        pass 
+                        # TODO 椭圆优化
+                elif self.dialog_settings.settings.FLAGS_POINTS2D == FLAGS_POINTS2D.CORRESPOND.value:
+                    if   self.dialog_settings.settings.FLAGS_OPT == FLAGS_OPT.ADAM.value:
+                        kwargs_adam = self.dialog_settings.settings.hyper_params_adam
+                        self.solver = SolverPoses6dDLT(method="Adam", **kwargs_adam)
+                    elif self.dialog_settings.settings.FLAGS_OPT == FLAGS_OPT.LM.value:
+                        kwargs_lm = self.dialog_settings.settings.lm
+                        self.solver = SolverPoses6dDLT(method="LM", **kwargs_lm)
                     else:
-                        cams.append(self.cams[i_cam])
-                        points2d_n_cams.append(points2d.astype(float))
-                        points3d_n_cams.append(points3d[indexes3d])
-                        is_data_ready = True
+                        raise ValueError("错误: FLAGS_OPT 无对应.")
 
-                if is_data_ready:
-                    if self.dialog_settings.settings.FLAGS_POINTS2D == 0:
-                        if i_obj == 0:
-                            self.solver = SolverPoses6d.load_setttings(self.dialog_settings.settings.FLAGS_POINTS2D, self.dialog_settings.settings)
-                    else: # TODO
-                        n_iters = self.dialog_settings.settings.hyper_params_adam.n_iters
-                        alpha   = self.dialog_settings.settings.hyper_params_adam.alpha
-                        beta1   = self.dialog_settings.settings.hyper_params_adam.beta1
-                        beta2   = self.dialog_settings.settings.hyper_params_adam.beta2
-                        self.solver = SolverPoses6d.load_setttings(self.dialog_settings.settings.FLAGS_POINTS2D, self.dialog_settings.settings)
-                    self.solver.set_cameras_pars(cams)
-                    self.solver.set_points2d_of_n_cams(points2d_n_cams)    
-                    self.solver.set_points3d_of_n_cams(points3d_n_cams)
-                    # _, r0, t0 = cv2.solvePnP(
-                    #     np.ascontiguousarray(points3d_n_cams[0][:,:3]).reshape((-1, 1, 3)), 
-                    #     np.ascontiguousarray(points2d_n_cams[0][:, :2]).reshape((-1, 1, 2)), 
-                    #     self.cams[0].intrin[:3, :3], 
-                    #     np.zeros(5), 
-                    #     flags=cv2.SOLVEPNP_EPNP
-                    # )     
-                    # theta0 = np.hstack((r0.flatten(), t0.flatten()))
-                    # np.array([-0.07499097,  0.0564026 , -0.80130748, -0.15415598,  0.15208027, -0.0339067 ])
+                if   self.dialog_settings.settings.FLAGS_THETA0 == FLAGS_THETA0.MAMUAL.value:
                     theta0 = self.functional_area.get_sub_tab_widget(i_obj).get_rtvec()
-                    log   = self.solver.run(theta0)
-                    theta = self.solver.opt.theta
+                elif self.dialog_settings.settings.FLAGS_THETA0 == FLAGS_THETA0.EPNP.value:
+                    self.initializer = InitializerPose6d.InitializerPose6d(method="EPnP")
+                    theta0 = self.initializer.run_by_epnp(**kwargs_data)
+                elif self.dialog_settings.settings.FLAGS_THETA0 == FLAGS_THETA0.PSO.value:
+                    kwargs_pso = self.dialog_settings.settings.hyper_params_pso
+                    self.initializer = InitializerPose6d.InitializerPose6d(method="PSO")
+                    self.initializer.init_pso(**kwargs_pso)
+                    theta0 = self.initializer.run_by_pso(**kwargs_data)
+                elif self.dialog_settings.settings.FLAGS_THETA0 == FLAGS_THETA0.NONE.value:
+                    theta0 = np.zeros(6)
+                else:
+                    raise ValueError("错误: FLAGS_THETA0 无对应.")
+                    return
                     
-                    #array([ 3.84508410e+02, -2.65103155e+02,  1.91306264e+02, -7.07351854e-02, 5.49107848e-02,  4.32552633e-01])
-                    self.fio.save_log(self.mode, self.i_scene, i_obj, log)
-                    self.fio.save_theta(self.i_scene, i_obj, self.solver.opt.theta)
+                log   = self.solver.run(theta0, **kwargs_data)
+                theta = self.solver.opt.theta
+                
+                self.fio.save_log(self.mode, self.i_scene, i_obj, log)
+                self.fio.save_theta(self.i_scene, i_obj, self.solver.opt.theta)
 
-                    self.objs[i_obj].pose = geometry.rtvec_to_rtmat(theta)
-                    for i_cam in range(n_cams):
-                        self.visualize_area.get_sub_dock_widget(i_cam).draw_all()
-                    if self.debug:
-                        print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_solve_successed.signal))
+                self.objs[i_obj].pose = geometry.rtvec_to_rtmat(theta)
+                for i_cam in range(n_cams):
+                    self.visualize_area.get_sub_dock_widget(i_cam).draw_all()
+
         else:
             print("错误: 未选择功能.")
         return

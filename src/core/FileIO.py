@@ -514,7 +514,8 @@ class FileIO(object):
             print("错误: 文件不存在.\n")
         else:
             ret  = True
-            data = load_numpy_txt(pth, dtype=np.int)
+            data = load_numpy_txt(pth)
+            data = data.astype(np.int)
         return [ret, data]
 
     def load_backbonelines(self, mode: str, obj: str or int):
