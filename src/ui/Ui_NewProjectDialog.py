@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 
-# Form implementation generated from reading ui file 'c:\Users\Li\Desktop\Pose6dSolver-pyqt\ui_files\NewProject.ui'
+# Form implementation generated from reading ui file 'c:\Users\Li\Desktop\Pose6dSolver-pyqt\ui_files\NewProjectDialog.ui'
 #
 # Created by: PyQt5 UI code generator 5.9.2
 #
@@ -10,7 +10,7 @@ from PyQt5 import QtCore, QtGui, QtWidgets
 
 class Ui_Dialog(object):
     def setupUi(self, Dialog):
-        Dialog.setObjectName("newProjectDialog")
+        Dialog.setObjectName("Dialog")
         Dialog.resize(355, 151)
         self.verticalLayout = QtWidgets.QVBoxLayout(Dialog)
         self.verticalLayout.setObjectName("verticalLayout")
@@ -18,10 +18,10 @@ class Ui_Dialog(object):
         self.toolButton.setMinimumSize(QtCore.QSize(80, 25))
         self.toolButton.setObjectName("toolButton")
         self.verticalLayout.addWidget(self.toolButton)
-        self.plainTextEdit = QtWidgets.QPlainTextEdit(Dialog)
-        self.plainTextEdit.setObjectName("plainTextEdit")
-        self.plainTextEdit.setPlainText("./姿态测量")
-        self.verticalLayout.addWidget(self.plainTextEdit)
+        self.lineEdit = QtWidgets.QLineEdit(Dialog)
+        self.lineEdit.setObjectName("lineEdit")
+        self.lineEdit.setText("./姿态测量")
+        self.verticalLayout.addWidget(self.lineEdit)
         self.horizontalLayout = QtWidgets.QHBoxLayout()
         self.horizontalLayout.setObjectName("horizontalLayout")
         spacerItem = QtWidgets.QSpacerItem(40, 20, QtWidgets.QSizePolicy.Expanding, QtWidgets.QSizePolicy.Minimum)
@@ -42,5 +42,6 @@ class Ui_Dialog(object):
 
     def retranslateUi(self, Dialog):
         _translate = QtCore.QCoreApplication.translate
-        Dialog.setWindowTitle(_translate("newProjectDialog", "newProjectDialog"))
-        self.toolButton.setText(_translate("newProjectDialog", "新建文件夹"))
+        Dialog.setWindowTitle(_translate("Dialog", "Dialog"))
+        self.toolButton.setText(_translate("Dialog", "新建文件夹"))
+

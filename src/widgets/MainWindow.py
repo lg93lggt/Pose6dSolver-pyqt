@@ -237,7 +237,6 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
         for i_cam in range(n_cams):
             self.visualize_area.get_sub_dock_widget(i_cam)._init_table_widget_show_points()
             self.visualize_area.get_sub_dock_widget(i_cam).draw_all()
-
         return
 
     
@@ -272,8 +271,6 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
                 # else:
                 #     print("标定失败.")
 
-                if self.debug:
-                    print("[DEBUG]:\t<{}>  EMIT SIGNAL <{}>".format(self.objectName(), self.sig_calibrate_successed.signal))
 
         elif self.mode == "solve":
             print("\n" + "*"*10 + " 解算姿态 " + "*"*10)
@@ -307,20 +304,6 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
                 kwargs_data.cameras            = cams
                 kwargs_data.points2d_of_n_cams = points2d_n_cams
                 kwargs_data.points3d_of_n_cams = points3d_n_cams
-                
-                if   self.dialog_settings.settings.FLAGS_POINTS2D == FLAGS_POINTS2D.ELLIPSE.value:
-                    if i_obj == 0:
-                        pass 
-                        # TODO 椭圆优化
-                elif self.dialog_settings.settings.FLAGS_POINTS2D == FLAGS_POINTS2D.CORRESPOND.value:
-                    if   self.dialog_settings.settings.FLAGS_OPT == FLAGS_OPT.ADAM.value:
-                        kwargs_adam = self.dialog_settings.settings.hyper_params_adam
-                        self.solver = SolverPoses6dDLT(method="Adam", **kwargs_adam)
-                    elif self.dialog_settings.settings.FLAGS_OPT == FLAGS_OPT.LM.value:
-                        kwargs_lm = self.dialog_settings.settings.lm
-                        self.solver = SolverPoses6dDLT(method="LM", **kwargs_lm)
-                    else:
-                        raise ValueError("错误: FLAGS_OPT 无对应.")
 
                 if   self.dialog_settings.settings.FLAGS_THETA0 == FLAGS_THETA0.MAMUAL.value:
                     theta0 = self.functional_area.get_sub_tab_widget(i_obj).get_rtvec()
@@ -338,6 +321,20 @@ class MainWindow(QMainWindow, Ui_MainWindow.Ui_MainWindow):
                     raise ValueError("错误: FLAGS_THETA0 无对应.")
                     return
                     
+                if   self.dialog_settings.settings.FLAGS_POINTS2D == FLAGS_POINTS2D.ELLIPSE.value:
+                    if i_obj == 0:
+                        print("暂无此功能")
+                        pass 
+                        # TODO 椭圆优化
+                elif self.dialog_settings.settings.FLAGS_POINTS2D == FLAGS_POINTS2D.CORRESPOND.value:
+                    if   self.dialog_settings.settings.FLAGS_OPT == FLAGS_OPT.ADAM.value:
+                        kwargs_adam = self.dialog_settings.settings.hyper_params_adam
+                        self.solver = SolverPoses6dDLT(method="Adam", **kwargs_adam)
+                    elif self.dialog_settings.settings.FLAGS_OPT == FLAGS_OPT.LM.value:
+                        kwargs_lm = self.dialog_settings.settings.lm
+                        self.solver = SolverPoses6dDLT(method="LM", **kwargs_lm)
+                    else:
+                        raise ValueError("错误: FLAGS_OPT 无对应.")
                 log   = self.solver.run(theta0, **kwargs_data)
                 theta = self.solver.opt.theta
                 

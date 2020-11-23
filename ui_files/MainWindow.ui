@@ -9,8 +9,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>704</width>
-    <height>532</height>
+    <width>799</width>
+    <height>627</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -34,7 +34,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>704</width>
+     <width>799</width>
      <height>23</height>
     </rect>
    </property>
@@ -56,6 +56,8 @@
     <addaction name="action_calib"/>
     <addaction name="separator"/>
     <addaction name="action_solve"/>
+    <addaction name="separator"/>
+    <addaction name="action_cal_angle"/>
    </widget>
    <widget class="QMenu" name="menu">
     <property name="title">
@@ -101,6 +103,11 @@
   <action name="action_settings">
    <property name="text">
     <string>参数设置</string>
+   </property>
+  </action>
+  <action name="action_cal_angle">
+   <property name="text">
+    <string>角度计算</string>
    </property>
   </action>
  </widget>

@@ -28,12 +28,12 @@ class NewProjectDialog(QDialog, Ui_NewProjectDialog.Ui_Dialog):
     @pyqtSlot()
     def on_toolButton_clicked(self): # 按下
         openfile_name = QFileDialog.getSaveFileName(self, "新建文件夹", "姿态测量", "文件夹")
-        self.plainTextEdit.setPlainText(openfile_name[0])
+        self.lineEdit.setPlainText(openfile_name[0])
         return 
 
     @pyqtSlot()
     def on_buttonBox_accepted(self): # 确认
-        tmp_dir = self.plainTextEdit.toPlainText()
+        tmp_dir = self.lineEdit.text()
         if not os.path.exists(tmp_dir):
             self.dir_project = tmp_dir
             print("\n新建工程文件夹:")

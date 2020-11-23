@@ -22,12 +22,12 @@ class OpenProjectDialog(QDialog, Ui_OpenProjectDialog.Ui_Dialog):
     @pyqtSlot()
     def on_toolButton_clicked(self) -> None:
         openfile_name = QFileDialog.getExistingDirectory(self, "打开文件夹")
-        self.plainTextEdit.setPlainText(openfile_name)
+        self.lineEdit.setPlainText(openfile_name)
         return 
 
     @pyqtSlot()
     def on_buttonBox_accepted(self) -> None: # 确认
-        tmp_dir = self.plainTextEdit.toPlainText()
+        tmp_dir = self.lineEdit.text()
         if os.path.exists(tmp_dir) and os.path.isdir(tmp_dir):
             pth_ini =  os.path.join(tmp_dir, "project.ini")
             if os.path.exists(pth_ini):

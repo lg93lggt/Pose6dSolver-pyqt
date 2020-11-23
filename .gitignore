@@ -8,3 +8,13 @@
 /src/.vscode/*
 /src/*/__pycache__/*
 src/core/__pycache__/*
+src/ui/__pycache__/Ui_MainWindow.cpython-37.pyc
+src/ui/__pycache__/Ui_NewProjectDialog.cpython-37.pyc
+src/ui/__pycache__/Ui_OpenProjectDialog.cpython-37.pyc
+src/ui/__pycache__/Ui_SettingsDialog.cpython-37.pyc
+src/widgets/__pycache__/DockGraphWidget.cpython-37.pyc
+src/widgets/__pycache__/FunctionalWidget.cpython-37.pyc
+src/widgets/__pycache__/MainWindow.cpython-37.pyc
+src/widgets/__pycache__/NewProject.cpython-37.pyc
+src/widgets/__pycache__/OpenProject.cpython-37.pyc
+src/widgets/__pycache__/SettingsDialog.cpython-37.pyc
